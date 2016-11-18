@@ -306,9 +306,11 @@ class HaleyAPI {
 			
 			log.info("Reconnecting haley api - re-subscribing handlers")
 			
+			Map<String, Closure> currentHandlersCopy = new HashMap<String, Closure>(currentHandlers);
+			
 			currentHandlers.clear();
 			
-			for(Entry<String, Closure> e : registeredHandlers.entrySet()) {
+			for(Entry<String, Closure> e : currentHandlersCopy.entrySet()) {
 				
 				_streamSubscribe(e.getKey()) { String subscribeError ->
 					
