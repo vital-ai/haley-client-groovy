@@ -43,9 +43,9 @@ class HaleyAPISample {
 		
 		VitalApp app = VitalApp.withId(appID)
 		
-		VitalServiceAsyncWebsocketClient websocketClient = new VitalServiceAsyncWebsocketClient(Vertx.vertx(), app, 'endpoint.', endpointURL)
+		VitalServiceAsyncWebsocketClient websocketClient = new VitalServiceAsyncWebsocketClient(Vertx.vertx(), app, 'endpoint.', endpointURL, 3, 3000)
 		
-		websocketClient.connect() { Throwable exception ->
+		websocketClient.connect({ Throwable exception ->
 			
 			if(exception) {
 				exception.printStackTrace()
@@ -72,7 +72,9 @@ class HaleyAPISample {
 				
 			}
 			
-		}
+		}, {Integer attempts ->
+			System.err.println("FAILED, attempts: ${attempts}")
+		})
 		
 		
 	}
@@ -186,6 +188,7 @@ class HaleyAPISample {
 			
 		}
 		
+		t.setDaemon(true)
 		t.start()
 
 		
