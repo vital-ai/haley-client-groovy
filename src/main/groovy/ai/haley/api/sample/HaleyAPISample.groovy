@@ -137,10 +137,57 @@ class HaleyAPISample {
 		haleyAPI.sendMessage(haleySession, utm) { HaleyStatus sendStatus ->
 			
 			println "send text message status: ${sendStatus}"
-			
+		
+			interactiveMode()
+				
 		}
 		
 		
 	}
-	
+
+	static void interactiveMode() {
+		
+		println "INTERACTIVE MODE, 'quit' quits the program"
+		
+		Thread t = new Thread() {
+			
+			@Override
+			public void run() {
+				Scanner scanner = new Scanner(System.in)
+				
+				String lastLine = null
+				
+				while(lastLine != 'quit') {
+					
+					lastLine = scanner.nextLine()
+					
+					lastLine = lastLine.trim()
+					
+					if(lastLine != 'quit' && lastLine.length() > 0) {
+						
+						UserTextMessage utm = new UserTextMessage()
+						utm.text = lastLine
+						utm.channelURI = channel.URI
+						
+						haleyAPI.sendMessage(haleySession, utm) { HaleyStatus sendStatus ->
+							
+							println "send text message status: ${sendStatus}"
+						
+						}
+						
+					}
+					
+				}
+				
+				println "QUIT"
+				
+				haleyAPI.closeSession(haleySession)
+			}
+			
+		}
+		
+		t.start()
+
+		
+	}	
 }

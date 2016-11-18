@@ -302,6 +302,31 @@ class HaleyAPI {
 		
 		this.vitalService = websocketClient
 		
+		this.vitalService.reconnectHandler = { Void v -> 
+			
+			log.info("Reconnecting haley api - re-subscribing handlers")
+			
+			currentHandlers.clear();
+			
+			for(Entry<String, Closure> e : registeredHandlers.entrySet()) {
+				
+				_streamSubscribe(e.getKey()) { String subscribeError ->
+					
+					if(subscribeError) {
+						log.error("Couldn't resubscribe to stream: ${e.getKey()} - exiting: " + subscribeError)
+						vitalService.close() { ResponseMessage res->
+							
+						}
+						return
+					}
+					
+					log.info('resubscribed to ' + this.streamName);
+					
+				}
+			}
+			
+		}
+		
 		mainPool = new ForkJoinPool()
 		
 		this.syncdomains = false
