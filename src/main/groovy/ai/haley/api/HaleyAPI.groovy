@@ -322,7 +322,17 @@ class HaleyAPI {
 						return
 					}
 					
-					log.info('resubscribed to ' + this.streamName);
+					
+					_sendLoggedInMsg { String sendLoggedInError ->
+						
+						if(sendLoggedInError) {
+							log.error('resubscribed but sending logged in msg failed', sendLoggedInError)
+						} else {
+							log.info('resubscribed to ' + this.streamName);
+						}
+						
+						
+					}
 					
 				}
 			}
