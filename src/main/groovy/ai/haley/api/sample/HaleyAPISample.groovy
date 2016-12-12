@@ -25,6 +25,10 @@ class HaleyAPISample {
 	
 	static String password
 	
+	
+	private static Vertx vertx
+	
+	
 	def static main(args) {
 		
 		if(args.length != 4) {
@@ -42,8 +46,10 @@ class HaleyAPISample {
 		println "Password length: ${password.length()}"
 		
 		VitalApp app = VitalApp.withId(appID)
-		
-		VitalServiceAsyncWebsocketClient websocketClient = new VitalServiceAsyncWebsocketClient(Vertx.vertx(), app, 'endpoint.', endpointURL, 3, 3000)
+	
+		vertx = Vertx.vertx()
+			
+		VitalServiceAsyncWebsocketClient websocketClient = new VitalServiceAsyncWebsocketClient(vertx, app, 'endpoint.', endpointURL, 3, 3000)
 		
 		websocketClient.connect({ Throwable exception ->
 			
@@ -85,6 +91,10 @@ class HaleyAPISample {
 			
 			println "auth status: ${status}"
 
+			if(!status.ok) {
+				return
+			}
+			
 			println "session: ${haleySession.toString()}"			
 			
 			
@@ -108,7 +118,25 @@ class HaleyAPISample {
 			
 			println "channels count: ${channels.size()}"
 			
-			channel = channels[0]
+			if(channels.size() == 0) {
+				System.err.println("No channels available")
+				return
+			}
+			
+			for(Channel ch : channels) {
+				if(ch.name.equalTo('haley')) {
+					System.out.println("Default haley channel found")
+					channel = ch
+				}
+			}
+			
+			if(channel == null) {
+				System.out.println("WARNIONG: default haley channel not found, using first from the list")
+				channel = channels[0]
+				return
+			}
+
+			System.out.println("Channel ${channel.name} - ${channel.URI}")
 			
 			onChannelObtained()
 			
@@ -182,8 +210,9 @@ class HaleyAPISample {
 				}
 				
 				println "QUIT"
+
+				vertx.close()				
 				
-				haleyAPI.closeSession(haleySession)
 			}
 			
 		}

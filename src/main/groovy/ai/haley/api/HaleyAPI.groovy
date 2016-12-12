@@ -817,6 +817,13 @@ class HaleyAPI {
 	//haley status callback
 	public void sendMessage(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, Closure callback) {
 
+		
+		String error = this._checkSession(haleySession);
+		if(error) {
+			callback(HaleyStatus.error(error));
+			return;
+		}
+		
 		if(aimpMessage == null) {
 			callback(HaleyStatus.error("aimpMessage must not be null"));
 			return;
@@ -868,8 +875,14 @@ class HaleyAPI {
 			}
 		}
 	
-		
-		this.vitalService.callFunction('haley-send-message', [message: rl]) { ResponseMessage sendRes ->
+		String method = ''
+		if( haleySession.isAuthenticated() ) {
+			method = 'haley-send-message'
+		} else {
+			method = 'haley-send-message-anonymous'
+		}
+ 		
+		this.vitalService.callFunction(method, [message: rl]) { ResponseMessage sendRes ->
 		
 			if(sendRes.exceptionType) {
 				callback(HaleyStatus.error(sendRes.exceptionType + ' - ' + sendRes.exceptionMessage))
