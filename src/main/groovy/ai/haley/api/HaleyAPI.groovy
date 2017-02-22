@@ -1,5 +1,6 @@
 package ai.haley.api
 
+import ai.haley.api.HaleyAPI.CachedCredentials;
 import ai.haley.api.HaleyAPI.MessageHandler;
 import ai.haley.api.session.HaleySession
 import ai.haley.api.session.HaleyStatus
@@ -108,6 +109,12 @@ class HaleyAPI {
 	
 	private syncdomains = false
 	
+	private Map<String, CachedCredentials> cachedCredentials = [:]
+	
+	private static class CachedCredentials {
+		String username
+		String password
+	}
 	
 	private String _checkSession(HaleySession haleySession) {
 		
@@ -710,7 +717,11 @@ class HaleyAPI {
 	}
 	
 	public void authenticateSession(HaleySession session, String username, String password, Closure callback) {
+		authenticateSessionImpl(session, username, password, true, callback)
+	}
 	
+	private void authenticateSessionImpl(HaleySession session, String username, String password, boolean sendLoggedInMsg, Closure callback) {
+		
 		String error = this._checkSession(session);
 		if(error) {
 			callback(HaleyStatus.error(error));
@@ -754,6 +765,8 @@ class HaleyAPI {
 			
 			log.info("Session obtained: ${userSession.sessionID}")
 			
+			cachedCredentials.put(session.sessionID, new CachedCredentials(username: username, password: password))
+			
 			//set it in the client for future requests
 			session.authSessionID = userSession.sessionID
 			session.authAccount = userLogin
@@ -762,16 +775,25 @@ class HaleyAPI {
 			//appSessionID must be set in order to send auth messages
 			vitalService.appSessionID = userSession.sessionID
 			
-			_sendLoggedInMsg() { String sendError ->
+			if(sendLoggedInMsg) {
 				
-				if(sendError) {
-					callback(HaleyStatus.error(sendError))
-				} else {
-					callback(HaleyStatus.ok())
-					
+				_sendLoggedInMsg() { String sendError ->
+				
+					if(sendError) {
+						callback(HaleyStatus.error(sendError))
+					} else {
+						callback(HaleyStatus.ok())
+						
+					}
+				
 				}
 				
+			} else {
+			
+				callback(HaleyStatus.ok())
+				
 			}
+			
 			
 		}
 		
@@ -816,7 +838,11 @@ class HaleyAPI {
 	
 	//haley status callback
 	public void sendMessage(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, Closure callback) {
-
+		sendMessageImpl(haleySession, aimpMessage, payload, 0, callback)
+	}
+		
+	//internal call
+	private void sendMessageImpl(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, int retry, Closure callback) {
 		
 		String error = this._checkSession(haleySession);
 		if(error) {
@@ -846,7 +872,7 @@ class HaleyAPI {
 			} else {
 			
 				if(userID != authAccount.username.toString()) {
-					callback(HaleyStatus.error('auth userID ' + authAccount.get('username') + ' does not match one set in message: ' + userID));
+					callback(HaleyStatus.error('auth userID ' + authAccount.username + ' does not match one set in message: ' + userID));
 					return;
 				}
 			}
@@ -885,15 +911,60 @@ class HaleyAPI {
 		this.vitalService.callFunction(method, [message: rl]) { ResponseMessage sendRes ->
 		
 			if(sendRes.exceptionType) {
+				
+				if(retry == 0 && sendRes.exceptionType == "error_denied") {
+					
+					
+					CachedCredentials cachedCredentials = cachedCredentials.get(haleySession.sessionID)
+					
+					if(cachedCredentials != null) {
+						
+						log.info("Session not found, re-authenticating...")
+						
+						haleySession.authAccount = null
+						haleySession.authenticated = false
+						haleySession.authSessionID = null
+						vitalService.appSessionID = null
+						
+						authenticateSessionImpl(haleySession, cachedCredentials.username, cachedCredentials.password, false) { HaleyStatus status ->
+							
+							if(status.isOk()) {
+								
+								log.info("Successfully reauthenticated the session, sending the message")
+								
+								sendMessageImpl(haleySession, aimpMessage, payload, retry+1, callback)
+								
+							} else {
+							
+								log.error("Reauthentication attempt failed: ${status.errorMessage}")
+								
+								callback(HaleyStatus.error(sendRes.exceptionType + ' - ' + sendRes.exceptionMessage))
+								return
+							
+							}
+							
+						}
+						
+						return
+						
+					}
+					
+					 
+				}
+				
 				callback(HaleyStatus.error(sendRes.exceptionType + ' - ' + sendRes.exceptionMessage))
 				return
 			}
 			
 			ResultList sendRL = sendRes.response
-			
+		
+//			send text message status: ERROR - error_denied - Session not found, session: Login_198a52b5-5e99-4626-ad17-f2ef923d7c1c
+				
 			if(sendRL.status.status != VitalStatus.Status.ok) {
+				
 				callback(HaleyStatus.error(sendRL.status.message))
 				return
+				
 			}
 			
 			log.info("message sent successfully", sendRL.status.message);
