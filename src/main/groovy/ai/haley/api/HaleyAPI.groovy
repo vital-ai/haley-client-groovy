@@ -116,6 +116,25 @@ class HaleyAPI {
 		String password
 	}
 	
+	
+	private List<Closure> reconnectListeners = []
+	
+	public boolean addReconnectListener(Closure reconnectListener) {
+		if(reconnectListeners.contains(reconnectListener)) {
+			return false
+		}
+		reconnectListeners.add(reconnectListener)
+		return true
+	}
+	
+	public boolean removeReconnectListener(Closure reconnectListener) {
+		if(!reconnectListeners.contains(reconnectListener)) {
+			return false
+		}
+		reconnectListeners.remove(reconnectListener)
+		return true
+	}
+	
 	private String _checkSession(HaleySession haleySession) {
 		
 		if(this.haleySessionSingleton == null) return 'no active haley session found';
@@ -338,7 +357,14 @@ class HaleyAPI {
 							log.info('resubscribed to ' + this.streamName);
 						}
 						
+						log.info("Notifying reconnect listeners: [${this.reconnectListeners.size()}]")
 						
+						for(Closure rl : this.reconnectListeners) {
+							
+							rl.call(this.haleySessionSingleton)
+							
+						}
+
 					}
 					
 				}
