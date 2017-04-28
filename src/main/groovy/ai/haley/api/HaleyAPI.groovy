@@ -889,24 +889,65 @@ class HaleyAPI {
 	
 		Login authAccount = haleySession.getAuthAccount();
 		
-		if( authAccount != null ) {
+		String masterUserID = aimpMessage.masterUserID
 		
-			String userID = aimpMessage.userID
-		
-			if(userID == null) {
-				aimpMessage.userID = authAccount.username
-			} else {
+		if(masterUserID) {
 			
-				if(userID != authAccount.username.toString()) {
-					callback(HaleyStatus.error('auth userID ' + authAccount.username + ' does not match one set in message: ' + userID));
-					return;
+			if(authAccount == null) {
+				callback(HaleyStatus.error("No auth account available - cannot use masterUserID"));
+				return
+			}
+			
+			String currentUserID = authAccount.username
+			if(currentUserID != masterUserID) {
+				callback(HaleyStatus.error("Master and current userID are different: " + masterUserID + " vs " + currentUserID))
+				return
+			}
+			
+			String effectiveUserID = aimpMessage.userID
+			if(effectiveUserID == null) {
+				callback(HaleyStatus.error("No userID in the message, it is required when using masterUserID tunneling"))
+				return
+			}
+			
+			String endpointURI = aimpMessage.endpointURI
+			if(!endpointURI) {
+				callback(HaleyStatus.error("masterUserID may only be used with endpointURI"))
+				return
+			}
+			
+			if(masterUserID == effectiveUserID) {
+				callback(HaleyStatus.error("masterUserID should not be equal to effective userID: " + masterUserID + " vs " + currentUserID))
+				return
+			}
+			
+		} else {
+		
+			if( authAccount != null ) {
+			
+				String userID = aimpMessage.userID
+			
+				if(userID == null) {
+					aimpMessage.userID = authAccount.username
+				} else {
+				
+					
+				
+					if(userID != authAccount.username.toString()) {
+						callback(HaleyStatus.error('auth userID ' + authAccount.username + ' does not match one set in message: ' + userID));
+						return;
+					}
 				}
+			
+				String n = authAccount.name
+				aimpMessage.userName = n != null ? n : authAccount.username
+			
 			}
 		
-			String n = authAccount.name
-			aimpMessage.userName = n != null ? n : authAccount.username
-		
 		}
+		
+		
+
 		
 	
 		String sid = aimpMessage.sessionID
@@ -915,6 +956,7 @@ class HaleyAPI {
 		} else {
 			if(sid != sessionID) {
 				callback(HaleyStatus.error('auth sessionID ' + sessionID + " does not match one set in message: " + sid));
+				return
 			}
 		}
 	
