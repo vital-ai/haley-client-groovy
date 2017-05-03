@@ -341,11 +341,17 @@ class HaleyAPI {
 				_streamSubscribe(e.getKey()) { String subscribeError ->
 					
 					if(subscribeError) {
-						log.error("Couldn't resubscribe to stream: ${e.getKey()} - exiting: " + subscribeError)
-						vitalService.close() { ResponseMessage res->
-							
-						}
+						
+						log.error("Couldn't resubscribe to stream: ${e.getKey()} - " + subscribeError)
+						
+						log.error("Calling reconnect handler again...");
+						
+						currentHandlers = currentHandlersCopy
+						
+						vitalService.reconnectHandler.handle()
+						
 						return
+						
 					}
 					
 					
@@ -377,7 +383,6 @@ class HaleyAPI {
 		this.syncdomains = false
 		
 	}
-	
 	
 	/*
 	 * utility classes to test parallelization of calls
