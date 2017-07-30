@@ -10,9 +10,12 @@ import ai.vital.service.vertx3.binary.ResponseMessage
 import ai.vital.service.vertx3.websocket.VitalServiceAsyncWebsocketClient
 import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.query.ResultList
+import ai.vital.vitalsigns.json.JSONSerializer;
+import ai.vital.vitalsigns.model.DomainModel
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VitalApp
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper;
 
 import com.hp.hpl.jena.rdf.arp.JenaHandler;
 import com.vitalai.aimp.domain.AIMPMessage
@@ -29,6 +32,10 @@ import org.slf4j.LoggerFactory;
 import jsr166y.ForkJoinPool 
 
 import groovyx.gpars.GParsPool
+import io.vertx.groovy.core.buffer.Buffer;
+import io.vertx.groovy.core.http.HttpClient
+import io.vertx.groovy.core.http.HttpClientRequest;
+import io.vertx.groovy.core.http.HttpClientResponse;
 
 //import java.util.concurrent.Executors
 
@@ -110,6 +117,7 @@ class HaleyAPI {
 	private syncdomains = false
 	
 	private Map<String, CachedCredentials> cachedCredentials = [:]
+	
 	
 	private static class CachedCredentials {
 		String username
@@ -1324,5 +1332,100 @@ class HaleyAPI {
 		}
 		
 	} 
+	
+	/**
+	 * async operation
+	 * callback called with String error, List<DomainModel>
+	 */
+	public void listServerDomainModels(Closure callback) {
+
+		//the endpoint must also provide simple rest methods to validate domains
+		URL websocketURL = this.vitalService.url
+		
+		int port = websocketURL.getPort()
+		boolean secure = websocketURL.getProtocol() == 'https'
+		if(secure && port < 0) {
+			port = 443
+		} else if(port < 0){
+			port = 80
+		}
+		
+		def options = [
+//			protocolVersion:"HTTP_2",
+			ssl: secure,
+//			useAlpn:true,
+			trustAll:true
+		  ]
+		
+		
+		HttpClient client = null
+		
+		def onFinish = { String error, List<DomainModel> results ->
+			
+			try {
+				if(client != null) client.close()
+			} catch(Exception e) {
+				log.error(e.localizedMessage, e)
+			}
+			
+			callback(error, results)
+			
+		}
+		
+		try {
+			
+			client = this.vitalService.vertx.createHttpClient(options);
+			
+			HttpClientRequest request = client.get(port, websocketURL.host, "/domains") { HttpClientResponse response ->
+
+				if( response.statusCode() != 200 ) {
+					onFinish("HTTP Status: " + response.statusCode() + " - " + response.statusMessage(), null)
+					return
+				}
+
+				response.bodyHandler { Buffer body ->
+
+
+					try {
+						List<GraphObject> models = JSONSerializer.fromJSONArrayString(body.toString())
+						
+						List<DomainModel> filtered = []
+						for(GraphObject o : models) {
+							if(!(o instanceof DomainModel)) throw new Exception("Expected DomainModels only: " + models.size())
+							filtered.add(o) 
+						}
+						onFinish(null, filtered)
+						
+					} catch(Exception e) {
+						log.error(e.localizedMessage, e)
+						onFinish(e.localizedMessage, null)
+					}
+
+				}
+				
+				response.exceptionHandler { Throwable ex ->
+					log.error(ex.localizedMessage, ex)
+					onFinish(ex.localizedMessage, null)
+				}
+
+			}
+			
+			request.exceptionHandler { Throwable ex ->
+				
+				log.error(ex.localizedMessage, ex)
+				
+				onFinish(ex.localizedMessage, null)
+				
+			}
+			
+			request.end()
+			
+		} catch(Exception e) {
+			log.error(e.localizedMessage, e)
+			onFinish(e.localizedMessage, e)
+		}
+	
+	}
+	
 	
 }
