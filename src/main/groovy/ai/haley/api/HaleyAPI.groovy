@@ -20,8 +20,11 @@ import groovy.json.JsonSlurper;
 import com.hp.hpl.jena.rdf.arp.JenaHandler;
 import com.vitalai.aimp.domain.AIMPMessage
 import com.vitalai.aimp.domain.Channel as AIMPChannel
-import com.vitalai.aimp.domain.ListChannelsRequestMessage;
+import com.vitalai.aimp.domain.HeartbeatMessage;
+import com.vitalai.aimp.domain.ListChannelsRequestMessage
+import com.vitalai.aimp.domain.UserLeftApp;
 import com.vitalai.aimp.domain.UserLoggedIn
+import com.vitalai.aimp.domain.UserLoggedOut;
 
 import java.nio.channels.Channel
 import java.util.Map.Entry
@@ -126,6 +129,8 @@ class HaleyAPI {
 	
 	
 	private List<Closure> reconnectListeners = []
+	
+	private Long lastActivityTimestamp = null; 
 	
 	public boolean addReconnectListener(Closure reconnectListener) {
 		if(reconnectListeners.contains(reconnectListener)) {
@@ -988,6 +993,17 @@ class HaleyAPI {
 		} else {
 			method = 'haley-send-message-anonymous'
 		}
+		
+		boolean updateTimestamp = true
+		
+		if(aimpMessage instanceof UserLoggedIn || aimpMessage instanceof UserLoggedOut || aimpMessage instanceof UserLeftApp) {
+			updateTimestamp = false
+		} else if(aimpMessage instanceof HeartbeatMessage) {
+			updateTimestamp = false
+			if(this.lastActivityTimestamp != null) {
+				aimpMessage.lastActivityTime = this.lastActivityTimestamp
+			}
+		}
  		
 		this.vitalService.callFunction(method, [message: rl]) { ResponseMessage sendRes ->
 		
@@ -1050,7 +1066,12 @@ class HaleyAPI {
 			
 			log.info("message sent successfully", sendRL.status.message);
 		
+			if(updateTimestamp) {
+				lastActivityTimestamp = System.currentTimeMillis()
+			}
+			
 			callback(HaleyStatus.ok());
+			
 		
 		}
 		
