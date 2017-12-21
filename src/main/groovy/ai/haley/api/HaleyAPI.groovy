@@ -92,9 +92,6 @@ class HaleyAPI {
 
 	private VitalServiceAsyncWebsocketClient vitalService
 	
-	//service sessionID	
-	private String sessionID
-	
 	private String streamName = 'haley'
 	
 	
@@ -103,14 +100,9 @@ class HaleyAPI {
 	//requestURI -> callback
 	private Map<String, Closure> requestHandlers = [:]
 	
-	private Map<String, Closure> currentHandlers = [:]
-	
 	Closure defaultHandler = null;
 	
 	Closure handlerFunction = null;
-	
-	
-	Map<String, Closure> registeredHandlers = [:]
 	
 	
 	//private final def mainPool = Executors.newFixedThreadPool(10)
@@ -158,152 +150,6 @@ class HaleyAPI {
 		
 	}
 	
-	private void _registerStreamHandler(String streamName, Closure handlerFunction, Closure callback) {
-	
-		if(streamName == null) {
-			callback("No 'streamName' param");
-			return;
-		}
-	
-		if(handlerFunction == null) {
-			callback("No 'handlerFunction' param");
-			return;
-		}
-	
-		if( this.registeredHandlers[streamName] != null ) {
-			callback("Handler for stream " + streamName + " already registered.");
-			return;
-		}
-	
-		this.registeredHandlers[streamName] = handlerFunction;
-	
-		callback(null)
-		
-	}
-	
-	//nodejs style callback
-	private void _streamSubscribe(String streamName, Closure callback) {
-		
-		//first check if we are able to
-		
-		Closure currentHandler = this.registeredHandlers[streamName];
-		
-		if(currentHandler == null) {
-			callback("No handler for stream " + streamName + " registered");
-			return;
-		}
-		
-		Closure activeHandler = this.currentHandlers[streamName]
-		
-		if(activeHandler != null) {
-			callback("Handler for stream " + streamName + " already subscribed");
-			return;
-		}
-		
-		//first call the server side, on success register
-
-		vitalService.callFunction(VERTX_STREAM_SUBSCRIBE, [streamNames: [streamName], sessionID: this.sessionID]) { ResponseMessage res ->
-			
-			if(res.exceptionType) {
-				callback(res.exceptionType + ' - ' + res.exceptionMessage)
-				return
-			}
-			
-			
-			//				  type: 'register',
-			//				  address: address,
-			//				  headers: mergeHeaders(this.defaultHeaders, headers)
-			
-			String address = 'stream.'+ this.sessionID
-			
-			vitalService.streamCallbacksMap.put(address, currentHandler)
-			
-			vitalService.webSocket.writeFinalTextFrame(JsonOutput.toJson([
-				type: 'register',
-				address: address,
-				headers: [:]
-			]))
-//			/**
-//			 * Register a new handler
-//			 *
-//			 * @param {String} address
-//			 * @param {Object} [headers]
-//			 * @param {Function} callback
-//			 */
-//			EventBus.prototype.registerHandler = function (address, headers, callback) {
-//			  // are we ready?
-//			  if (this.state != EventBus.OPEN) {
-//				throw new Error('INVALID_STATE_ERR');
-//			  }
-//		  
-//			  if (typeof headers === 'function') {
-//				callback = headers;
-//				headers = {};
-//			  }
-//		  
-//			  // ensure it is an array
-//			  if (!this.handlers[address]) {
-//				this.handlers[address] = [];
-//				// First handler for this address so we should register the connection
-//				this.sockJSConn.send(JSON.stringify({
-//				  type: 'register',
-//				  address: address,
-//				  headers: mergeHeaders(this.defaultHeaders, headers)
-//				}));
-//			  }
-//		  
-//			  this.handlers[address].push(callback);
-			
-			
-			ResultList rl = res.response
-			
-			if(rl.status.status != VitalStatus.Status.ok) {
-				callback("ERROR: " + rl.status.message)
-				return
-			}
-			
-			
-			//register stream handler
-//			vitalService.we
-			
-			currentHandlers[streamName] = currentHandler
-			
-			callback(null)
-			
-		}
-		
-		/*		
-		var _this = this;
-		
-		this.callMethod('callFunction', args, function(successRL){
-			
-			if(!_this.eventbusListenerActive) {
-				
-				_this.eventbusHandler = _this.createNewHandler();
-				_this.eb.registerHandler('stream.'+ _this.sessionID, _this.eventbusHandler);
-				_this.eventbusListenerActive = true;
-			}
-			
-			
-			_this.currentHandlers[streamName] = currentHandler;
-			
-			successCB({
-				_type: 'ai.vital.vitalservice.query.ResultList',
-				status: {
-					_type: 'ai.vital.vitalservice.VitalStatus',
-					status: 'ok',
-					message: 'Successfully Subscribe to stream ' + streamName
-				}
-			});
-			
-		}, function(errorResponse){
-			errorCB(errorResponse);
-		});
-		*/
-		
-		
-	}
-	
 	//nodejs callback
 	private void _sendLoggedInMsg(Closure callback) {
 
@@ -343,52 +189,14 @@ class HaleyAPI {
 		
 		this.vitalService.reconnectHandler = { Void v -> 
 			
-			log.info("Reconnecting haley api - re-subscribing handlers")
-			
-			Map<String, Closure> currentHandlersCopy = new HashMap<String, Closure>(currentHandlers);
-			
-			currentHandlers.clear();
-			
-			for(Entry<String, Closure> e : currentHandlersCopy.entrySet()) {
-				
-				_streamSubscribe(e.getKey()) { String subscribeError ->
-					
-					if(subscribeError) {
+			log.info("Notifying reconnect listeners: [${this.reconnectListeners.size()}]")
 						
-						log.error("Couldn't resubscribe to stream: ${e.getKey()} - " + subscribeError)
-						
-						log.error("Calling reconnect handler again...");
-						
-						currentHandlers = currentHandlersCopy
-						
-						vitalService.reconnectHandler.handle()
-						
-						return
-						
-					}
-					
-					
-					_sendLoggedInMsg { String sendLoggedInError ->
-						
-						if(sendLoggedInError) {
-							log.error('resubscribed but sending logged in msg failed', sendLoggedInError)
-						} else {
-							log.info('resubscribed to ' + this.streamName);
-						}
-						
-						log.info("Notifying reconnect listeners: [${this.reconnectListeners.size()}]")
-						
-						for(Closure rl : this.reconnectListeners) {
+			for(Closure rl : this.reconnectListeners) {
 							
-							rl.call(this.haleySessionSingleton)
+				rl.call(this.haleySessionSingleton)
 							
-						}
-
-					}
-					
-				}
 			}
-			
+
 		}
 		
 		mainPool = new ForkJoinPool()
@@ -541,10 +349,6 @@ class HaleyAPI {
 	//nodejs callback style: String error, HaleySession sessionObject 
 	public void openSession(Closure callback) {
 	
-		
-		this.sessionID = UUID.randomUUID().toString()
-		
-		
 //		HaleySession session = new HaleySession()
 //		
 //		sessions.add(session)
@@ -556,19 +360,7 @@ class HaleyAPI {
 			return;
 		}
 
-		this.handlerFunction = { ResponseMessage res ->
-			
-			if(res.exceptionType) {
-				log.error("Received stream error: ${res.exceptionType} - ${res.exceptionMessage}")
-				return
-			}
-			
-			ResultList rl = res.response
-			
-			if(rl.status.status != VitalStatus.Status.ok) {
-				log.error("Received stream error: ${rl.status.message}")
-				return
-			}
+		this.handlerFunction = { ResultList rl ->
 			
 			log.info("Message received: " + rl)
 			
@@ -578,31 +370,43 @@ class HaleyAPI {
 		
 		log.info('subscribing to stream ', this.streamName);
 		
-		_registerStreamHandler(this.streamName, this.handlerFunction) { String registerError ->
+		vitalService.callFunction(VitalServiceAsyncWebsocketClient.GROOVY_REGISTER_STREAM_HANDLER, [streamName: this.streamName, handlerFunction: this.handlerFunction] ) { ResponseMessage regRes ->
 			
-			if(registerError) {
-				callback(registerError, null)
+			if(regRes.exceptionType) {
+				callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
+				return
+			}
+			
+			ResultList regRL = regRes.response
+			if(regRL.status.status != VitalStatus.Status.ok) {
+				callback("ERROR: " + regRL.status.message, null)
 				return
 			}
 			
 			log.info('registered handler to ' + this.streamName);
 			
-			_streamSubscribe(this.streamName) { String subscribeError ->
-					
-				if(subscribeError) {
-					log.error(subscribeError)
-					callback(subscribeError, null)
+
+			
+			vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [streamName: this.streamName]) { ResponseMessage subRes ->
+				if(subRes.exceptionType) {
+					callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
+					return
+				}
+				
+				ResultList subRL = regRes.response
+				if(subRL.status.status != VitalStatus.Status.ok) {
+					callback("ERROR: " + subRL.status.message, null)
 					return
 				}
 				
 				log.info('subscribed to ' + this.streamName);
 				
-				//in groovy session cookie is unavailable
-				this.haleySessionSingleton = new HaleySession(sessionID: this.sessionID)
-
-				callback(null, this.haleySessionSingleton)				
+				//in groovy session cookie is unavailable - session must not be authenticated
+				this.haleySessionSingleton = new HaleySession(sessionID: vitalService.sessionID)
 				
-			}
+				callback(null, this.haleySessionSingleton)
+				
+			}			
 			
 		}
 		
@@ -970,10 +774,10 @@ class HaleyAPI {
 	
 		String sid = aimpMessage.sessionID
 		if(sid == null) {
-			aimpMessage.sessionID = this.sessionID
+			aimpMessage.sessionID = vitalService.sessionID
 		} else {
 			if(sid != sessionID) {
-				callback(HaleyStatus.error('auth sessionID ' + sessionID + " does not match one set in message: " + sid));
+				callback(HaleyStatus.error('sessionID ' + sessionID + " does not match one set in message: " + sid));
 				return
 			}
 		}
