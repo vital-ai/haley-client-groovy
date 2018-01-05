@@ -1,9 +1,11 @@
 package ai.haley.api
 
 import ai.haley.api.HaleyAPI.CachedCredentials;
-import ai.haley.api.HaleyAPI.MessageHandler;
+import ai.haley.api.HaleyAPI.MessageHandler
+import ai.haley.api.impl.HaleyFileUploadImplementation;
 import ai.haley.api.session.HaleySession
 import ai.haley.api.session.HaleyStatus
+import ai.vital.domain.FileNode
 import ai.vital.domain.Login
 import ai.vital.domain.UserSession;
 import ai.vital.service.vertx3.binary.ResponseMessage
@@ -20,14 +22,18 @@ import groovy.json.JsonSlurper;
 import com.hp.hpl.jena.rdf.arp.JenaHandler;
 import com.vitalai.aimp.domain.AIMPMessage
 import com.vitalai.aimp.domain.Channel as AIMPChannel
+import com.vitalai.aimp.domain.FileQuestion;
 import com.vitalai.aimp.domain.HeartbeatMessage;
 import com.vitalai.aimp.domain.ListChannelsRequestMessage
+import com.vitalai.aimp.domain.QuestionMessage
 import com.vitalai.aimp.domain.UserLeftApp;
 import com.vitalai.aimp.domain.UserLoggedIn
 import com.vitalai.aimp.domain.UserLoggedOut;
 
 import java.nio.channels.Channel
 import java.util.Map.Entry
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory;
@@ -991,9 +997,9 @@ class HaleyAPI {
 //			throw e
 //		}
 		
-		if(aimpMessage == null) throw "null aimpMessage";
-		if(aimpMessage.URI == null) throw "null aimpMessage.URI";
-		if(callback == null) throw "null callback";
+		if(aimpMessage == null) return HaleyStatus.error("null aimpMessage")
+		if(aimpMessage.URI == null) return HaleyStatus.error("null aimpMessage.URI")
+		if(callback == null) return HaleyStatus.error("null callback")
 		Closure currentCB = this.requestHandlers[aimpMessage.URI];
 		
 		if(currentCB == null || currentCB != callback) {
@@ -1052,14 +1058,105 @@ class HaleyAPI {
 	}
 	
 	public void uploadBinary(HaleySession session, Channel channel, Closure callback) {
-	
+		
 		throw new Exception("not implemented yet")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		
-//		callback.call(status)
+	}
+		
+	public void uploadFile(HaleySession session, QuestionMessage questionMessage, FileQuestion fileQuestion, File file, Closure callback) {
 	
+//		if(!scope == 'Public' || scope == 'Private') {
+//			callback(HaleyStatus.error("Invalid scope: " + scope + " , expected Public/Private"))
+//			return
+//		}
+		
+		String error = this._checkSession(session);
+		if(error) {
+			callback(HaleyStatus.error(error));
+			return;
+		}
+
+		def executor = new HaleyFileUploadImplementation()
+		executor.callback = callback
+		executor.haleyApi = this
+		executor.haleySession = session
+		executor.questionMsg = questionMessage
+		executor.fileQuestion = fileQuestion
+//		executor.scope = scope
+		executor.file = file
+		executor.doUpload()
+				
+	}
+	
+	private final static Pattern s3URLPattern = Pattern.compile('^s3\\:\\/\\/([^\\/]+)\\/(.+)$', Pattern.CASE_INSENSITIVE)
+	
+	public String getFileNodeDownloadURL(HaleySession haleySession, FileNode fileNode) {
+		
+		String scope = fileNode.fileScope
+		
+		if(!scope) scope = 'public';
+		
+		if('PRIVATE' == scope.toUpperCase()) {
+				
+			return this.getFileNodeURIDownloadURL(haleySession, fileNode.URI);
+			
+		} else {
+			
+			//just convert s3 to public https link
+			String fileURL = fileNode.fileURL
+			Matcher matcher = s3URLPattern.matcher(fileURL);
+			if(matcher.matches()) {
+				
+				String bucket = matcher.group(1)
+				String key = matcher.group(2)
+				
+				//
+				key = key.replace('%', '%25')
+				key = key.replace('+', '%2B')
+				
+				String keyEscaped = key
+				
+				return 'https://' + bucket + '.s3.amazonaws.com/' + keyEscaped;
+				
+			}
+			
+			return fileURL;
+			
+		}
+		
+	}
+	
+	/**
+	 * Returns the download URL for given file node URI
+	 */
+	public String getFileNodeURIDownloadURL(HaleySession haleySession, String fileNodeURI) {
+	
+		URL websocketURL = this.vitalService.url
+		
+		int port = websocketURL.getPort()
+		boolean secure = websocketURL.getProtocol() == 'https'
+		if(secure && port < 0) {
+			port = 443
+		} else if(port < 0){
+			port = 80
+		}
+		
+		String url = websocketURL.getProtocol() + "://" + websocketURL.getHost() 
+		if(websocketURL.getPort() > 0) {
+			url += ( ":" + websocketURL.getPort() )
+		}
+		
+		url += ( '/filedownload?fileURI=' + URLEncoder.encode(fileNodeURI, 'UTF-8') )
+		
+		if(haleySession.isAuthenticated()) {
+			url += ('&authSessionID=' + URLEncoder.encode(haleySession.getAuthSessionID(), 'UTF-8'))
+		} else {
+			url += '&sessionID=' + URLEncoder.encode(haleySession.getSessionID(), 'UTF-8');
+		}
+
+		return url;
+		
+		
 	}
 	
 	public HaleyStatus downloadBinary(HaleySession session, String identifier, Channel channel) {
@@ -1247,7 +1344,7 @@ class HaleyAPI {
 			
 		} catch(Exception e) {
 			log.error(e.localizedMessage, e)
-			onFinish(e.localizedMessage, e)
+			onFinish(e.localizedMessage, null)
 		}
 	
 	}

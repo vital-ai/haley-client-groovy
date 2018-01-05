@@ -6,6 +6,9 @@ class HaleyStatus {
 	
 	String errorMessage
 	
+	//some operations provide result
+	Object result
+	
 	public static HaleyStatus error(String msg) {
 		return new HaleyStatus(ok: false, errorMessage: msg)
 	}
@@ -14,8 +17,14 @@ class HaleyStatus {
 		return new HaleyStatus(ok: true)
 	}
 	
+	public static HaleyStatus okWithResult(Object result) {
+		return new HaleyStatus(ok: true, result: result)
+	}
+	
 	public String toString() {
 		return "${ok ? 'OK' : 'ERROR'} - ${errorMessage}"
 	}
+	
+	
 	
 }
