@@ -10,13 +10,13 @@ import ai.vital.vitalsigns.model.VitalApp;
 import groovy.json.JsonSlurper
 import io.vertx.core.AsyncResult
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.groovy.core.buffer.Buffer
-import io.vertx.groovy.core.file.AsyncFile
-import io.vertx.groovy.core.file.FileProps;
-import io.vertx.groovy.core.http.HttpClient
-import io.vertx.groovy.core.http.HttpClientRequest
-import io.vertx.groovy.core.http.HttpClientResponse
-import io.vertx.groovy.core.streams.Pump
+import io.vertx.core.buffer.Buffer
+import io.vertx.core.file.AsyncFile
+import io.vertx.core.file.FileProps;
+import io.vertx.core.http.HttpClient
+import io.vertx.core.http.HttpClientRequest
+import io.vertx.core.http.HttpClientResponse
+import io.vertx.core.streams.Pump
 
 import java.nio.file.Files;
 import java.nio.file.Path

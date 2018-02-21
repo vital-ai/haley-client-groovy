@@ -1,6 +1,6 @@
 package ai.haley.api.sample
 
-import io.vertx.groovy.core.Vertx
+import io.vertx.core.Vertx
 import ai.haley.api.HaleyAPI
 import ai.haley.api.session.HaleySession
 import ai.haley.api.session.HaleyStatus
