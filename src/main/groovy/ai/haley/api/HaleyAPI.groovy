@@ -792,7 +792,16 @@ class HaleyAPI {
 		rl.addResult(aimpMessage);
 	
 		if(payload != null) {
-			for(GraphObject g : payload) {
+			for(int i = 0 ; i < payload.size(); i++) {
+				GraphObject g = payload.get(i)
+				if(g == null) {
+					callback(HaleyStatus.error("payload object cannot be null, #" + (i+1)));
+					return;
+				}
+				if(g.URI == null) {
+					callback(HaleyStatus.error("all payload objects must have URIs set, missing URI in object #" + (i+1) + " type: " + g.getClass().getCanonicalName()));
+					return;
+				}
 				rl.addResult(g);
 			}
 		}
