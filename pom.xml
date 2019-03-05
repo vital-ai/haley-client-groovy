@@ -12,9 +12,8 @@
   <properties>
     <!-- the main class -->
     <exec.mainClass>ai.haley.api.sample.HaleyAPISample</exec.mainClass>
-    
-        <vital.version>0.2.304</vital.version>
- 
+    <vital.version>0.2.304</vital.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
 

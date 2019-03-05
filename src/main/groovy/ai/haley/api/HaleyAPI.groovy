@@ -2,6 +2,7 @@ package ai.haley.api
 
 import ai.haley.api.HaleyAPI.CachedCredentials;
 import ai.haley.api.HaleyAPI.MessageHandler
+import ai.haley.api.impl.HaleyFileUploadImplementation;
 import ai.haley.api.session.HaleySession
 import ai.haley.api.session.HaleyStatus
 import ai.vital.domain.FileNode
@@ -40,6 +41,10 @@ import org.slf4j.LoggerFactory;
 import jsr166y.ForkJoinPool 
 
 import groovyx.gpars.GParsPool
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 
 //import java.util.concurrent.Executors
 
@@ -787,7 +792,16 @@ class HaleyAPI {
 		rl.addResult(aimpMessage);
 	
 		if(payload != null) {
-			for(GraphObject g : payload) {
+			for(int i = 0 ; i < payload.size(); i++) {
+				GraphObject g = payload.get(i)
+				if(g == null) {
+					callback(HaleyStatus.error("payload object cannot be null, #" + (i+1)));
+					return;
+				}
+				if(g.URI == null) {
+					callback(HaleyStatus.error("all payload objects must have URIs set, missing URI in object #" + (i+1) + " type: " + g.getClass().getCanonicalName()));
+					return;
+				}
 				rl.addResult(g);
 			}
 		}
@@ -1058,7 +1072,6 @@ class HaleyAPI {
 		
 	}
 		
-	/*
 	public void uploadFile(HaleySession session, QuestionMessage questionMessage, FileQuestion fileQuestion, File file, Closure callback) {
 	
 //		if(!scope == 'Public' || scope == 'Private') {
@@ -1083,8 +1096,6 @@ class HaleyAPI {
 		executor.doUpload()
 				
 	}
-	*
-	*/
 	
 	private final static Pattern s3URLPattern = Pattern.compile('^s3\\:\\/\\/([^\\/]+)\\/(.+)$', Pattern.CASE_INSENSITIVE)
 	
@@ -1257,7 +1268,6 @@ class HaleyAPI {
 	 * async operation
 	 * callback called with String error, List<DomainModel>
 	 */
-	/*
 	public void listServerDomainModels(Closure callback) {
 
 		//the endpoint must also provide simple rest methods to validate domains
@@ -1347,6 +1357,6 @@ class HaleyAPI {
 		}
 	
 	}
-	*/	
+	
 	
 }
