@@ -709,6 +709,21 @@ class HaleyAPI {
 			return;
 		}
 		
+		for(p in payload){
+			if(p == null) {				
+				callback(HaleyStatus.error("payload object must not be null."));
+				return;
+			}
+		}
+		
+		for(p in payload){
+			if( (!p instanceof GraphObject)) {
+				callback(HaleyStatus.error("payload object must be a GraphObject."));
+				return;
+			}
+		}
+		
+		
 		if(aimpMessage.URI == null) {
 			aimpMessage.generateURI((VitalApp) null)
 		}
