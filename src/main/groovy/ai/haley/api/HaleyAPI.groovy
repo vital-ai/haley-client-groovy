@@ -246,7 +246,7 @@ class HaleyAPI {
 	// open session to local haley server, given endpoint
 	public HaleySession openSession(String endpoint) {
 		
-		throw new Exception("Blocking version not implemented yet")
+		throw new Exception("Blocking version not implemented yet.")
 //		HaleySession session = new HaleySession()
 //		
 //		sessions.add(session)
@@ -281,13 +281,13 @@ class HaleyAPI {
 			
 				if(cbRes != null && cbRes == false) {
 				
-					log.info("RequestURI handler returned false, unregistering");
+					log.info("RequestURI handler returned false, unregistering.");
 				
 					this.requestHandlers.remove(requestURI);
 				
 				} else {
 				
-					log.info("RequestURI handler returned non-false, still regsitered");
+					log.info("RequestURI handler returned non-false, still registered.");
 				
 				}
 			
@@ -338,7 +338,7 @@ class HaleyAPI {
 	
 		if(this.defaultHandler != null) {
 			
-			log.info("Notifying default handler");
+			log.info("Notifying default handler.");
 			
 			this.defaultHandler(msgRL);
 			
@@ -348,7 +348,7 @@ class HaleyAPI {
 		}
 		
 		
-		log.info("Notified " + c + " msg handlers");
+		log.info("Notified " + c + " msg handlers.");
 
 	}
 	
@@ -482,7 +482,7 @@ class HaleyAPI {
 	
 	public HaleyStatus closeSession(HaleySession session) {
 		
-		throw new Exception("Blocking version not implemented yet")
+		throw new Exception("Blocking version not implemented yet.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -495,7 +495,7 @@ class HaleyAPI {
 	
 	public void closeSession(HaleySession session, Closure callback) {
 	
-		throw new Exception("not implemented yet")
+		throw new Exception("not implemented yet.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -508,7 +508,7 @@ class HaleyAPI {
 	
 	public HaleyStatus closeAllSessions() {
 		
-		throw new Exception("Blocking version not implemented yet")
+		throw new Exception("Blocking version not implemented yet.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -530,7 +530,7 @@ class HaleyAPI {
 	
 	public void closeAllSessions(Closure callback) {
 	
-		throw new Exception("not implemented yet")
+		throw new Exception("not implemented yet.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -563,7 +563,7 @@ class HaleyAPI {
 	
 	public HaleyStatus authenticateSession(HaleySession session, String username, String password) {
 
-		throw new Exception("Blocking version not implemented yet") 
+		throw new Exception("Blocking version not implemented yet.") 
 				
 //		HaleyStatus status = new HaleyStatus()
 //		return status
@@ -583,7 +583,7 @@ class HaleyAPI {
 		}
 		
 		if(session.isAuthenticated()) {
-			callback(HaleyStatus.error('session already authenticated'));
+			callback(HaleyStatus.error('session already authenticated.'));
 			return;
 		}
 		
@@ -606,14 +606,14 @@ class HaleyAPI {
 			//logged in successfully keep session for further requests
 			UserSession userSession = res.iterator(UserSession.class).next();
 			if(session == null) {
-				callback(HaleyStatus.error("No session object in positive login response"))
+				callback(HaleyStatus.error("No session object in positive login response."))
 				return
 			}
 			
 			Login userLogin = res.iterator(Login.class).next();
 			
 			if(userLogin == null) {
-				callback(HaleyStatus.error("No login object in positive login response"))
+				callback(HaleyStatus.error("No login object in positive login response."))
 				return
 			}
 			
@@ -656,7 +656,7 @@ class HaleyAPI {
 	
 	public HaleyStatus unauthenticateSession(HaleySession session) {
 		
-		throw new Exception("blocking version not implemented yet")
+		throw new Exception("blocking version not implemented yet.")
 //		HaleyStatus status = new HaleyStatus()
 //		
 //		
@@ -668,7 +668,7 @@ class HaleyAPI {
 	
 	public void unauthenticateSession(HaleySession session, Closure callback) {
 	
-		throw new Exception("not implemented yet")
+		throw new Exception("not implemented yet.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -705,7 +705,7 @@ class HaleyAPI {
 		}
 		
 		if(aimpMessage == null) {
-			callback(HaleyStatus.error("aimpMessage must not be null"));
+			callback(HaleyStatus.error("aimpMessage must not be null."));
 			return;
 		}
 		
@@ -722,7 +722,7 @@ class HaleyAPI {
 		if(masterUserID) {
 			
 			if(authAccount == null) {
-				callback(HaleyStatus.error("No auth account available - cannot use masterUserID"));
+				callback(HaleyStatus.error("No auth account available - cannot use masterUserID."));
 				return
 			}
 			
@@ -734,13 +734,13 @@ class HaleyAPI {
 			
 			String effectiveUserID = aimpMessage.userID
 			if(effectiveUserID == null) {
-				callback(HaleyStatus.error("No userID in the message, it is required when using masterUserID tunneling"))
+				callback(HaleyStatus.error("No userID in the message, it is required when using masterUserID tunneling."))
 				return
 			}
 			
 			String endpointURI = aimpMessage.endpointURI
 			if(!endpointURI) {
-				callback(HaleyStatus.error("masterUserID may only be used with endpointURI"))
+				callback(HaleyStatus.error("masterUserID may only be used with endpointURI."))
 				return
 			}
 			
@@ -846,7 +846,7 @@ class HaleyAPI {
 							
 							if(status.isOk()) {
 								
-								log.info("Successfully reauthenticated the session, sending the message")
+								log.info("Successfully reauthenticated the session, sending the message.")
 								
 								sendMessageImpl(haleySession, aimpMessage, payload, retry+1, callback)
 								
@@ -899,7 +899,7 @@ class HaleyAPI {
 	
 	public HaleyStatus sendMessage(HaleySession session, AIMPMessage message) {
 		
-		throw new Exception("Blocking version not implemented")
+		throw new Exception("Blocking version not implemented.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -919,7 +919,7 @@ class HaleyAPI {
 	
 	public HaleyStatus sendMessage(HaleySession session, AIMPMessage message, List<GraphObject> payload) {
 	
-		throw new Exception("Blocking version not implemented")
+		throw new Exception("Blocking version not implemented.")
 //		HaleyStatus status = new HaleyStatus()
 //		
 //		
@@ -983,7 +983,7 @@ class HaleyAPI {
 	
 		if(callback == null) {
 			if(this.defaultHandler == null) {
-				return HaleyStatus.error("Default handler not set, cannot deregister");
+				return HaleyStatus.error("Default handler not set, cannot deregister.");
 			} else {
 				this.defaultHandler = null;
 				return HaleyStatus.ok();
@@ -991,7 +991,7 @@ class HaleyAPI {
 		}
 	
 		if(this.defaultHandler != null && this.defaultHandler == callback) {
-			return HaleyStatus.error("Default handler already set and equal to new one");
+			return HaleyStatus.error("Default handler already set and equal to new one.");
 		} else {
 			this.defaultHandler = callback;
 			return HaleyStatus.ok()
@@ -1015,7 +1015,7 @@ class HaleyAPI {
 			this.requestHandlers[aimpMessage.URI] = callback;
 			return HaleyStatus.ok();
 		} else {
-			return HaleyStatus.error("This callback already set for this message");
+			return HaleyStatus.error("This callback already set for this message.");
 		}
 		
 	}
@@ -1058,7 +1058,7 @@ class HaleyAPI {
 	
 	public HaleyStatus uploadBinary(HaleySession session, Channel channel) {
 		
-		throw new Exception("not implemented yet")
+		throw new Exception("not implemented yet.")
 //		HaleyStatus status = new HaleyStatus()
 //		
 //		
@@ -1068,7 +1068,7 @@ class HaleyAPI {
 	
 	public void uploadBinary(HaleySession session, Channel channel, Closure callback) {
 		
-		throw new Exception("not implemented yet")
+		throw new Exception("not implemented yet.")
 		
 	}
 		
@@ -1170,7 +1170,7 @@ class HaleyAPI {
 	
 	public HaleyStatus downloadBinary(HaleySession session, String identifier, Channel channel) {
 		
-		throw new Exception("not implemented yet")
+		throw new Exception("not implemented yet.")
 		
 //		HaleyStatus status = new HaleyStatus()
 //		
@@ -1209,7 +1209,7 @@ class HaleyAPI {
 	
 	public Collection<AIMPChannel> listChannels(HaleySession session) {
 
-		throw new Exception("Blocking version not implemented")
+		throw new Exception("Blocking version not implemented.")
 		
 //		List<AIMPChannel> channels = []
 //		
