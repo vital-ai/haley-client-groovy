@@ -19,6 +19,9 @@ import ai.vital.vitalsigns.model.VitalApp
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper;
 
+//import java.util.concurrent.Executors
+
+
 import com.hp.hpl.jena.rdf.arp.JenaHandler;
 import com.vitalai.aimp.domain.AIMPMessage
 import com.vitalai.aimp.domain.Channel as AIMPChannel
@@ -46,7 +49,6 @@ import io.vertx.core.http.HttpClient
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 
-//import java.util.concurrent.Executors
 
 
 /*
@@ -55,33 +57,19 @@ import io.vertx.core.http.HttpClientResponse;
  * 
  * Includes synchronous and asynchronous calls
  * 
- * Multiple instances of HaleyAPI may be instantiated.  Howver, there is an underlying
+ * Multiple instances of HaleyAPI may be instantiated.  However, there is an underlying
  * singleton for vitalsigns, so domain classes will be shared across all instances.
  * 
- * The initial version may consider a single endpoint only.
+ * This version may consider a single endpoint only.
  * 
  * There may be a conflict when opening multiple endpoints with conflicting domains.
  * This can throw an exception and not open the session.
  * 
- * 
  */
+
+
 class HaleyAPI {
-	
-	
-	
-//	public final static String GROOVY_REGISTER_STREAM_HANDLER = 'groovy-register-stream-handler';
-	
-//	public final static String GROOVY_UNREGISTER_STREAM_HANDLER = 'groovy-unregister-stream-handler';
-	
-//	public final static String GROOVY_LIST_STREAM_HANDLERS = 'groovy-list-stream-handlers';
-	
-	public final static String VERTX_STREAM_SUBSCRIBE = 'vertx-stream-subscribe';
-	
-	public final static String VERTX_STREAM_UNSUBSCRIBE = 'vertx-stream-unsubscribe';
-	
-	
-	private final static Logger log = LoggerFactory.getLogger(HaleyAPI.class)
-	
+		
 	private static class MessageHandler {
 		
 		Closure callback
@@ -92,39 +80,51 @@ class HaleyAPI {
 		
 	}
 	
+	private static class CachedCredentials {
+		
+		String username
+		
+		String password
+		
+	}
+	
+	private final static Logger log = LoggerFactory.getLogger(HaleyAPI.class)
+	
+	public final static String VERTX_STREAM_SUBSCRIBE = 'vertx-stream-subscribe';
+	
+	public final static String VERTX_STREAM_UNSUBSCRIBE = 'vertx-stream-unsubscribe';
+
+//	public final static String GROOVY_REGISTER_STREAM_HANDLER = 'groovy-register-stream-handler';
+	
+//	public final static String GROOVY_UNREGISTER_STREAM_HANDLER = 'groovy-unregister-stream-handler';
+	
+//	public final static String GROOVY_LIST_STREAM_HANDLERS = 'groovy-list-stream-handlers';
+	
 //	private List<HaleySession> sessions = []
 	
+//	private final def mainPool = Executors.newFixedThreadPool(10)
+	
+
 	private HaleySession haleySessionSingleton
 
 	private VitalServiceAsyncWebsocketClient vitalService
 	
 	private String streamName = 'haley'
-	
-	
+		
 	private List<MessageHandler> handlers = []
 
-	//requestURI -> callback
+	// requestURI -> callback
 	private Map<String, Closure> requestHandlers = [:]
 	
 	Closure defaultHandler = null;
 	
 	Closure handlerFunction = null;
 	
-	
-	//private final def mainPool = Executors.newFixedThreadPool(10)
-	
 	private ForkJoinPool mainPool
 	
 	private syncdomains = false
 	
 	private Map<String, CachedCredentials> cachedCredentials = [:]
-	
-	
-	private static class CachedCredentials {
-		String username
-		String password
-	}
-	
 	
 	private List<Closure> reconnectListeners = []
 	
@@ -157,6 +157,7 @@ class HaleyAPI {
 	}
 	
 	//nodejs callback
+	
 	private void _sendLoggedInMsg(Closure callback) {
 
 		this.sendMessage(this.haleySessionSingleton, new UserLoggedIn(), []) { HaleyStatus status ->
@@ -247,6 +248,7 @@ class HaleyAPI {
 	public HaleySession openSession(String endpoint) {
 		
 		throw new Exception("Blocking version not implemented yet.")
+		
 //		HaleySession session = new HaleySession()
 //		
 //		sessions.add(session)
@@ -265,7 +267,6 @@ class HaleyAPI {
 	
 		Class<? extends AIMPMessage> type = m.getClass();
 	
-		
 		//requestURI handler
 		String requestURI = m.requestURI
 	
@@ -390,9 +391,7 @@ class HaleyAPI {
 			}
 			
 			log.info('registered handler to ' + this.streamName);
-			
-
-			
+				
 			vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [streamName: this.streamName]) { ResponseMessage subRes ->
 				if(subRes.exceptionType) {
 					callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
@@ -653,7 +652,6 @@ class HaleyAPI {
 		
 }
 	
-	
 	public HaleyStatus unauthenticateSession(HaleySession session) {
 		
 		throw new Exception("blocking version not implemented yet.")
@@ -722,8 +720,7 @@ class HaleyAPI {
 				return;
 			}
 		}
-		
-		
+			
 		if(aimpMessage.URI == null) {
 			aimpMessage.generateURI((VitalApp) null)
 		}
@@ -773,9 +770,7 @@ class HaleyAPI {
 				if(userID == null) {
 					aimpMessage.userID = authAccount.username
 				} else {
-				
-					
-				
+						
 					if(userID != authAccount.username.toString()) {
 						callback(HaleyStatus.error('auth userID ' + authAccount.username + ' does not match one set in message: ' + userID));
 						return;
@@ -789,10 +784,6 @@ class HaleyAPI {
 		
 		}
 		
-		
-
-		
-	
 		String sid = aimpMessage.sessionID
 		if(sid == null) {
 			aimpMessage.sessionID = vitalService.sessionID
@@ -844,8 +835,7 @@ class HaleyAPI {
 			if(sendRes.exceptionType) {
 				
 				if(retry == 0 && sendRes.exceptionType == "error_denied") {
-					
-					
+								
 					CachedCredentials cachedCredentials = cachedCredentials.get(haleySession.sessionID)
 					
 					if(cachedCredentials != null) {
@@ -879,7 +869,6 @@ class HaleyAPI {
 						return
 						
 					}
-					
 					 
 				}
 				
@@ -906,11 +895,8 @@ class HaleyAPI {
 			
 			callback(HaleyStatus.ok());
 			
-		
 		}
-		
 	}
-	
 	
 	public HaleyStatus sendMessage(HaleySession session, AIMPMessage message) {
 		
@@ -926,11 +912,8 @@ class HaleyAPI {
 	public void sendMessage(HaleySession session, AIMPMessage message, Closure callback) {
 
 		this.sendMessage(session, message, [], callback)
-		
-		
+			
 	}
-	
-	
 	
 	public HaleyStatus sendMessage(HaleySession session, AIMPMessage message, List<GraphObject> payload) {
 	
@@ -943,8 +926,6 @@ class HaleyAPI {
 	
 	}
 
-	
-	
 	// should callbacks be on a per-session basis?
 	public HaleyStatus registerCallback(List<Class<? extends AIMPMessage>> messageTypes, boolean subclasses, Closure callback) {
 	
@@ -1372,6 +1353,5 @@ class HaleyAPI {
 		}
 	
 	}
-	
-	
+		
 }

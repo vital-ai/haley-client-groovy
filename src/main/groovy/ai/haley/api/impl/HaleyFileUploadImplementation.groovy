@@ -48,9 +48,7 @@ class HaleyFileUploadImplementation {
 	File file
 	
 	Closure callback
-	
-	
-	
+		
 	Login login
 	 
 //	Channel loginChannel
@@ -59,7 +57,6 @@ class HaleyFileUploadImplementation {
 	
 	FileQuestion fileQuestion
 	
-
 	public void doUpload() {
 
 //		if(!haleySession.isAuthenticated()) {
@@ -154,14 +151,12 @@ class HaleyFileUploadImplementation {
 	
 		URL websocketURL = haleyApi.vitalService.url
 	
-	
 		String url = '/fileupload/'
 		//    	url += '?fileNodeClass=' + encodeURIComponent(fileNodeClass);
 		url += '?temporary=true'
 		//    url += '&scope=' + scope;
 		url += '&authSessionID=' + URLEncoder.encode(haleySession.getAuthSessionID(), 'UTF-8');
-		
-		
+			
 		url += '&multipart=false'
 		
 		url += '&fileName=' + URLEncoder.encode(file.getName(), 'UTF-8')
@@ -181,12 +176,10 @@ class HaleyFileUploadImplementation {
 		trustAll:true
 	  ]
 	
-	
 	HttpClient client = null
 	
 	def onFinish = { String error, Map data ->
-		
-		
+			
 		try {
 			if(client != null) client.close()
 		} catch(Exception e) {

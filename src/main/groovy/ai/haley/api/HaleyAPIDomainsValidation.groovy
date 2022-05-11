@@ -20,9 +20,9 @@ class HaleyAPIDomainsValidation {
 	 */
 	public static validateDomains(HaleyAPI haleyApi, boolean failIfListElementsDifferent, Closure callback) {
 		
-		haleyApi.listServerDomainModels { String error, List<DomainModel> models ->
+		def handler = { String error, List<DomainModel> models ->
 			
-				try {
+			try {
 				
 				if(error) {
 					callback("Error when listing server domain models: " + error)
@@ -79,6 +79,7 @@ class HaleyAPIDomainsValidation {
 					String v2 = serverDomain.versionInfo
 
 					if(hash1 != hash2) {
+						
 						differentDomains.add(localDomain.URI + " local hash: " + hash1 + " remote hash: " + hash2)
 						continue
 					}			
@@ -98,12 +99,18 @@ class HaleyAPIDomainsValidation {
 				callback(null)
 			
 			} catch(Exception e) {
-				log.error(e.localizedMessage, e)
+				
+				HaleyAPIDomainsValidation.log.error(e.localizedMessage, e)
+				
 				callback("Internal error: " + e.localizedMessage)
+				
 			}
 			
 			
 		}
+		
+		
+		haleyApi.listServerDomainModels(handler)
 		
 	}
 	
