@@ -17,11 +17,9 @@ import io.vertx.core.http.HttpClient
 import io.vertx.core.http.HttpClientRequest
 import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.streams.Pump
-
 import java.nio.file.Files;
 import java.nio.file.Path
 import java.nio.file.Paths;
-
 import com.vitalai.aimp.domain.AIMPMessage
 import com.vitalai.aimp.domain.AnswerMessage
 import com.vitalai.aimp.domain.Channel
@@ -30,7 +28,7 @@ import com.vitalai.aimp.domain.FileQuestion;
 import com.vitalai.aimp.domain.IntentMessage
 import com.vitalai.aimp.domain.MetaQLResultsMessage;
 import com.vitalai.aimp.domain.QuestionMessage
-
+import org.apache.tika.Tika
 import org.slf4j.Logger 
 import org.slf4j.LoggerFactory 
 
@@ -56,6 +54,11 @@ class HaleyFileUploadImplementation {
 	QuestionMessage questionMsg
 	
 	FileQuestion fileQuestion
+	
+	
+	Tika tika = new Tika()
+	
+	
 	
 	public void doUpload() {
 
@@ -342,8 +345,13 @@ class HaleyFileUploadImplementation {
 				String contentType = null
 				
 				try {
-					Path source = Paths.get(file.getAbsolutePath());
-					contentType = Files.probeContentType(source)
+					
+					contentType = tika.detect(file)
+					
+					// Path source = Paths.get(file.getAbsolutePath());
+					// contentType = Files.probeContentType(source)
+				
+					
 				} catch(Exception e) {
 					log.warn("Error when detecting file content type: " + file.getAbsolutePath() + ": " + e.localizedMessage)
 				}
