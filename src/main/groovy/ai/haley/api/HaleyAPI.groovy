@@ -576,6 +576,7 @@ class HaleyAPI {
 	private void authenticateSessionImpl(HaleySession session, String username, String password, boolean sendLoggedInMsg, Closure callback) {
 		
 		String error = this._checkSession(session);
+		
 		if(error) {
 			callback(HaleyStatus.error(error));
 			return;
@@ -600,10 +601,12 @@ class HaleyAPI {
 				return
 			}
 			
-			log.info("auth success: ");
+			log.info("auth success.");
 	
 			//logged in successfully keep session for further requests
+			
 			UserSession userSession = res.iterator(UserSession.class).next();
+			
 			if(session == null) {
 				callback(HaleyStatus.error("No session object in positive login response."))
 				return
@@ -621,6 +624,7 @@ class HaleyAPI {
 			cachedCredentials.put(session.sessionID, new CachedCredentials(username: username, password: password))
 			
 			//set it in the client for future requests
+			
 			session.authSessionID = userSession.sessionID
 			session.authAccount = userLogin
 			session.authenticated = true
@@ -1222,11 +1226,16 @@ class HaleyAPI {
 			return;
 		}
 
+		
+		log.info("ListChannels Session: " + session.toString())
+		
 		ListChannelsRequestMessage msg = new ListChannelsRequestMessage()
 		
 		msg.generateURI((VitalApp) null)
 
-		msg.userID = session.authAccount.username
+		// msg.userID = session.authAccount.username
+		
+		
 		
 		
 		Closure requestCallback = { ResultList message ->
