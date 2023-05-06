@@ -12,11 +12,12 @@ class HaleySession {
 	
 	Login authAccount
 	
+	@Override
 	public String toString() {
 		String s = "HaleySession sessionID: ${sessionID} authenticated ? ${authenticated}"
 		if(authenticated) {
 			s += " authSessionID: ${authSessionID} authAccount: ${authAccount?.toCompactString()}"
 		}
-		return s
+		return s.toString()
 	}
 }

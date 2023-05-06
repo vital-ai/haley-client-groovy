@@ -1223,8 +1223,12 @@ class HaleyAPI {
 		}
 
 		ListChannelsRequestMessage msg = new ListChannelsRequestMessage()
+		
 		msg.generateURI((VitalApp) null)
 
+		msg.userID = session.authAccount.username
+		
+		
 		Closure requestCallback = { ResultList message ->
 		
 			callback(null, message.iterator(AIMPChannel.class).toList());
@@ -1241,7 +1245,7 @@ class HaleyAPI {
 			return;
 		}
 	
-//	this.sendMessageWithRequestCallback(haleySession, aimpMessage, graphObjectsList, callback, requestCallback)
+		// this.sendMessageWithRequestCallback(haleySession, aimpMessage, graphObjectsList, callback, requestCallback)
 	
 		this.sendMessage(session, msg, []) { HaleyStatus sendStatus->
 		
