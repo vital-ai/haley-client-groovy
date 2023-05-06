@@ -701,8 +701,7 @@ class HaleyAPI {
 	}
 		
 	// internal call
-	// force one message sent at a time?
-	private synchronized void sendMessageImpl(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, int retry, Closure callback) {
+	private void sendMessageImpl(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, int retry, Closure callback) {
 		
 		String error = this._checkSession(haleySession)
 		
@@ -888,7 +887,7 @@ class HaleyAPI {
 			
 			ResultList sendRL = sendRes.response
 		
-//			send text message status: ERROR - error_denied - Session not found, session: Login_198a52b5-5e99-4626-ad17-f2ef923d7c1c
+			// send text message status: ERROR - error_denied - Session not found, session: Login_198a52b5-5e99-4626-ad17-f2ef923d7c1c
 				
 			if(sendRL.status.status != VitalStatus.Status.ok) {
 				
