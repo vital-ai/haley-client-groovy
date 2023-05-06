@@ -120,7 +120,7 @@ class HaleyAPI {
 	
 	Closure handlerFunction = null;
 	
-	private ForkJoinPool mainPool
+	// private ForkJoinPool mainPool
 	
 	private syncdomains = false
 	
@@ -160,7 +160,9 @@ class HaleyAPI {
 	
 	private void _sendLoggedInMsg(Closure callback) {
 
-		this.sendMessage(this.haleySessionSingleton, new UserLoggedIn(), []) { HaleyStatus status ->
+		UserLoggedIn userLoggedIn = new UserLoggedIn()
+		
+		this.sendMessage(this.haleySessionSingleton, userLoggedIn, []) { HaleyStatus status ->
 			
 			if(status.ok) {
 				callback(null)
@@ -206,7 +208,7 @@ class HaleyAPI {
 
 		}
 		
-		mainPool = new ForkJoinPool()
+		// mainPool = new ForkJoinPool()
 		
 		this.syncdomains = false
 		
@@ -217,17 +219,17 @@ class HaleyAPI {
 	 * 
 	 */
 	
-	public int getActiveThreadCount() {
+	// public int getActiveThreadCount() {
 		
-		return mainPool.getActiveThreadCount()
+	// 	return mainPool.getActiveThreadCount()
 		
-	}
+	// }
 	
-	public boolean isQuiescent() {
+	// public boolean isQuiescent() {
 		
-		return mainPool.isQuiescent()
+	// 	return mainPool.isQuiescent()
 		
-	}
+	// }
 	
 	
 	// open session to haley service
@@ -682,6 +684,7 @@ class HaleyAPI {
 	public void sendMessageWithRequestCallback(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, Closure requestCallback, Closure sendOpCallback) {
 		
 		HaleyStatus status = this.registerRequestCallback(aimpMessage, requestCallback)
+		
 		if(!status.ok) {
 			sendOpCallback(status)
 			return
@@ -697,12 +700,14 @@ class HaleyAPI {
 		sendMessageImpl(haleySession, aimpMessage, payload, 0, callback)
 	}
 		
-	//internal call
-	private void sendMessageImpl(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, int retry, Closure callback) {
+	// internal call
+	// force one message sent at a time?
+	private synchronized void sendMessageImpl(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, int retry, Closure callback) {
 		
-		String error = this._checkSession(haleySession);
+		String error = this._checkSession(haleySession)
+		
 		if(error) {
-			callback(HaleyStatus.error(error));
+			callback(HaleyStatus.error(error))
 			return;
 		}
 		
@@ -729,9 +734,9 @@ class HaleyAPI {
 			aimpMessage.generateURI((VitalApp) null)
 		}
 		
-		String sessionID = haleySession.getSessionID();
+		String sessionID = haleySession.getSessionID()
 	
-		Login authAccount = haleySession.getAuthAccount();
+		Login authAccount = haleySession.getAuthAccount()
 		
 		String masterUserID = aimpMessage.masterUserID
 		
@@ -799,7 +804,8 @@ class HaleyAPI {
 		}
 	
 		ResultList rl = new ResultList()
-		rl.addResult(aimpMessage);
+		
+		rl.addResult(aimpMessage)
 	
 		if(payload != null) {
 			for(int i = 0 ; i < payload.size(); i++) {
