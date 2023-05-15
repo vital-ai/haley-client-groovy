@@ -49,6 +49,9 @@ import io.vertx.core.http.HttpClient
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.locks.Condition
+import java.util.concurrent.locks.ReentrantLock
 
 
 /*
@@ -156,7 +159,7 @@ class HaleyAPI {
 		
 	}
 	
-	//nodejs callback
+	//nodejs style callback
 	
 	private void _sendLoggedInMsg(Closure callback) {
 
@@ -191,6 +194,15 @@ class HaleyAPI {
 	
 	// init a new instance
 	// default is to use only locally available domains
+	
+	
+	// use for mock case
+	public HaleyAPI() {
+
+		
+		
+	}		
+	
 	
 	public HaleyAPI(VitalServiceAsyncWebsocketClient websocketClient) {
 		
@@ -566,8 +578,8 @@ class HaleyAPI {
 
 		throw new Exception("Blocking version not implemented yet.") 
 				
-//		HaleyStatus status = new HaleyStatus()
-//		return status
+	// HaleyStatus status = new HaleyStatus()
+	// return status
 		
 	}
 	
@@ -589,7 +601,7 @@ class HaleyAPI {
 			return;
 		}
 		
-		this.vitalService.callFunction('vitalauth.login', [loginType: 'Login', username: username, password: password]) { ResponseMessage loginRes ->
+		this.vitalService.callFunction('vitalauth.login', [loginType: 'Login', username: username, password: password], { ResponseMessage loginRes ->
 				
 			if(loginRes.exceptionType) {
 				callback(HaleyStatus.error("Logging in exception: ${loginRes.exceptionType} - ${loginRes.exceptionMessage}"))
@@ -602,10 +614,10 @@ class HaleyAPI {
 				callback(HaleyStatus.error("Logging in failed: ${res.status.message}"))
 				return
 			}
-			
+						
 			log.info("auth success.");
 	
-			//logged in successfully keep session for further requests
+			// logged in successfully keep session for further requests
 			
 			UserSession userSession = res.iterator(UserSession.class).next();
 			
@@ -623,6 +635,7 @@ class HaleyAPI {
 			
 			log.info("Session obtained: ${userSession.sessionID}")
 			
+					
 			cachedCredentials.put(session.sessionID, new CachedCredentials(username: username, password: password))
 			
 			//set it in the client for future requests
@@ -633,6 +646,11 @@ class HaleyAPI {
 			
 			//appSessionID must be set in order to send auth messages
 			vitalService.appSessionID = userSession.sessionID
+			
+			
+			callback(HaleyStatus.ok())
+				
+			/*		
 			
 			if(sendLoggedInMsg) {
 				
@@ -653,10 +671,13 @@ class HaleyAPI {
 				
 			}
 			
+			*/
 			
-		}
-		
-}
+			
+			
+		})
+
+	}
 	
 	public HaleyStatus unauthenticateSession(HaleySession session) {
 		
@@ -702,7 +723,7 @@ class HaleyAPI {
 		
 	// internal call
 	private void sendMessageImpl(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, int retry, Closure callback) {
-		
+			
 		String error = this._checkSession(haleySession)
 		
 		if(error) {
@@ -786,13 +807,14 @@ class HaleyAPI {
 				}
 			
 				String n = authAccount.name
+				
 				aimpMessage.userName = n != null ? n : authAccount.username
-			
 			}
 		
 		}
 		
 		String sid = aimpMessage.sessionID
+		
 		if(sid == null) {
 			aimpMessage.sessionID = vitalService.sessionID
 		} else {
@@ -822,6 +844,7 @@ class HaleyAPI {
 		}
 	
 		String method = ''
+		
 		if( haleySession.isAuthenticated() ) {
 			method = 'haley-send-message'
 		} else {
@@ -838,8 +861,8 @@ class HaleyAPI {
 				aimpMessage.lastActivityTime = this.lastActivityTimestamp
 			}
 		}
- 		
-		this.vitalService.callFunction(method, [message: rl]) { ResponseMessage sendRes ->
+ 			
+		this.vitalService.callFunction(method, [ message: rl ], { ResponseMessage sendRes ->
 		
 			if(sendRes.exceptionType) {
 				
@@ -869,19 +892,22 @@ class HaleyAPI {
 								log.error("Reauthentication attempt failed: ${status.errorMessage}")
 								
 								callback(HaleyStatus.error(sendRes.exceptionType + ' - ' + sendRes.exceptionMessage))
+								
 								return
 							
 							}
 							
 						}
 						
-						return
-						
+						return	
 					}
 					 
 				}
 				
+				
 				callback(HaleyStatus.error(sendRes.exceptionType + ' - ' + sendRes.exceptionMessage))
+				
+							
 				return
 			}
 			
@@ -892,6 +918,7 @@ class HaleyAPI {
 			if(sendRL.status.status != VitalStatus.Status.ok) {
 				
 				callback(HaleyStatus.error(sendRL.status.message))
+				
 				return
 				
 			}
@@ -902,9 +929,12 @@ class HaleyAPI {
 				lastActivityTimestamp = System.currentTimeMillis()
 			}
 			
-			callback(HaleyStatus.ok());
+			callback(HaleyStatus.ok())
 			
-		}
+			return
+			
+		})
+			
 	}
 	
 	public HaleyStatus sendMessage(HaleySession session, AIMPMessage message) {
@@ -1225,13 +1255,13 @@ class HaleyAPI {
 	//nodejs <error, list> type	 
 	public void listChannels(HaleySession session, Closure callback) {
 		
-		String error = this._checkSession(session);
+		String error = this._checkSession(session)
+		
 		if(error) {
 			callback(error, null);
 			return;
 		}
 
-		
 		log.info("ListChannels Session: " + session.toString())
 		
 		ListChannelsRequestMessage msg = new ListChannelsRequestMessage()
@@ -1239,10 +1269,7 @@ class HaleyAPI {
 		msg.generateURI((VitalApp) null)
 
 		// msg.userID = session.authAccount.username
-		
-		
-		
-		
+			
 		Closure requestCallback = { ResultList message ->
 		
 			callback(null, message.iterator(AIMPChannel.class).toList());
