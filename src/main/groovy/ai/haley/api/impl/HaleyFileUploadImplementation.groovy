@@ -32,7 +32,7 @@ import org.apache.tika.Tika
 import org.slf4j.Logger 
 import org.slf4j.LoggerFactory 
 
-//excutor caches the loginChannel
+//executor caches the loginChannel
 class HaleyFileUploadImplementation {
 
 	private final static Logger log = LoggerFactory.getLogger(HaleyFileUploadImplementation.class)

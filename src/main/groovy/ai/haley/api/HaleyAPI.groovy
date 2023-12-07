@@ -2,7 +2,7 @@ package ai.haley.api
 
 import ai.haley.api.HaleyAPI.CachedCredentials;
 import ai.haley.api.HaleyAPI.MessageHandler
-import ai.haley.api.impl.HaleyFileUploadImplementation;
+import ai.haley.api.impl.HaleyFileUploadImplementation
 import ai.haley.api.session.HaleySession
 import ai.haley.api.session.HaleyStatus
 import ai.vital.domain.FileNode
@@ -19,7 +19,7 @@ import ai.vital.vitalsigns.model.VitalApp
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper;
 
-//import java.util.concurrent.Executors
+// import java.util.concurrent.Executors
 
 
 import com.hp.hpl.jena.rdf.arp.JenaHandler;
@@ -1126,7 +1126,7 @@ class HaleyAPI {
 		executor.haleySession = session
 		executor.questionMsg = questionMessage
 		executor.fileQuestion = fileQuestion
-//		executor.scope = scope
+		// executor.scope = scope
 		executor.file = file
 		executor.doUpload()
 				
