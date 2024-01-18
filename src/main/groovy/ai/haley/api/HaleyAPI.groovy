@@ -1,6 +1,6 @@
 package ai.haley.api
 
-import ai.haley.api.HaleyAPI.CachedCredentials;
+import ai.haley.api.HaleyAPI.CachedCredentials
 import ai.haley.api.HaleyAPI.MessageHandler
 import ai.haley.api.impl.HaleyFileUploadImplementation
 import ai.haley.api.session.HaleySession
@@ -10,49 +10,40 @@ import ai.vital.domain.Login
 import ai.vital.domain.UserSession;
 import ai.vital.service.vertx3.binary.ResponseMessage
 import ai.vital.service.vertx3.websocket.VitalServiceAsyncWebsocketClient
-import ai.vital.vitalservice.VitalStatus;
+import ai.vital.vitalservice.VitalStatus
 import ai.vital.vitalservice.query.ResultList
-import ai.vital.vitalsigns.json.JSONSerializer;
+import ai.vital.vitalsigns.json.JSONSerializer
 import ai.vital.vitalsigns.model.DomainModel
-import ai.vital.vitalsigns.model.GraphObject;
+import ai.vital.vitalsigns.model.GraphObject
 import ai.vital.vitalsigns.model.VitalApp
 import groovy.json.JsonOutput
-import groovy.json.JsonSlurper;
-
-// import java.util.concurrent.Executors
-
-
-import com.hp.hpl.jena.rdf.arp.JenaHandler;
+import groovy.json.JsonSlurper
+import com.hp.hpl.jena.rdf.arp.JenaHandler
 import com.vitalai.aimp.domain.AIMPMessage
 import com.vitalai.aimp.domain.Channel as AIMPChannel
-import com.vitalai.aimp.domain.FileQuestion;
-import com.vitalai.aimp.domain.HeartbeatMessage;
+import com.vitalai.aimp.domain.FileQuestion
+import com.vitalai.aimp.domain.HeartbeatMessage
 import com.vitalai.aimp.domain.ListChannelsRequestMessage
 import com.vitalai.aimp.domain.QuestionMessage
-import com.vitalai.aimp.domain.UserLeftApp;
+import com.vitalai.aimp.domain.UserLeftApp
 import com.vitalai.aimp.domain.UserLoggedIn
-import com.vitalai.aimp.domain.UserLoggedOut;
-
+import com.vitalai.aimp.domain.UserLoggedOut
 import java.nio.channels.Channel
 import java.util.Map.Entry
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory;
-
+import org.slf4j.LoggerFactory
 import jsr166y.ForkJoinPool 
-
 import groovyx.gpars.GParsPool
-import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpClient
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-
+import io.vertx.core.http.HttpClientRequest
+import io.vertx.core.http.HttpClientResponse
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
-
+// import java.util.concurrent.Executors
 
 /*
  * Haley API
@@ -69,7 +60,6 @@ import java.util.concurrent.locks.ReentrantLock
  * This can throw an exception and not open the session.
  * 
  */
-
 
 class HaleyAPI {
 		
@@ -97,17 +87,16 @@ class HaleyAPI {
 	
 	public final static String VERTX_STREAM_UNSUBSCRIBE = 'vertx-stream-unsubscribe';
 
-//	public final static String GROOVY_REGISTER_STREAM_HANDLER = 'groovy-register-stream-handler';
+	// public final static String GROOVY_REGISTER_STREAM_HANDLER = 'groovy-register-stream-handler';
 	
-//	public final static String GROOVY_UNREGISTER_STREAM_HANDLER = 'groovy-unregister-stream-handler';
+	// public final static String GROOVY_UNREGISTER_STREAM_HANDLER = 'groovy-unregister-stream-handler';
 	
-//	public final static String GROOVY_LIST_STREAM_HANDLERS = 'groovy-list-stream-handlers';
+	// public final static String GROOVY_LIST_STREAM_HANDLERS = 'groovy-list-stream-handlers';
 	
-//	private List<HaleySession> sessions = []
+	// private List<HaleySession> sessions = []
 	
-//	private final def mainPool = Executors.newFixedThreadPool(10)
+	// private final def mainPool = Executors.newFixedThreadPool(10)
 	
-
 	private HaleySession haleySessionSingleton
 
 	private VitalServiceAsyncWebsocketClient vitalService
@@ -146,7 +135,32 @@ class HaleyAPI {
 			return false
 		}
 		reconnectListeners.remove(reconnectListener)
+		
 		return true
+	}
+	
+	public void clearReconnectListeners() {
+		
+		reconnectListeners = []
+	}
+	
+	public void closeWebsocket() {
+		
+		if(vitalService.webSocket != null) {
+			
+			try {
+				
+				vitalService.closed = true
+				
+				vitalService.webSocket.close()
+			
+			} catch(Exception e) {
+			
+				log.error("Exception closing websocket: " + e.localizedMessage) 
+			}
+			
+			vitalService.webSocket = null
+		}		
 	}
 	
 	private String _checkSession(HaleySession haleySession) {
@@ -159,7 +173,7 @@ class HaleyAPI {
 		
 	}
 	
-	//nodejs style callback
+	// nodejs style callback
 	
 	private void _sendLoggedInMsg(Closure callback) {
 
@@ -177,33 +191,30 @@ class HaleyAPI {
 			}
 			
 		}
-				
-//		var msg = vitaljs.graphObject({type: 'http://vital.ai/ontology/vital-aimp#UserLoggedIn'});
-//		
-//		this.sendMessage(this.haleySessionSingleton, msg, [], function(error){
-//			
-//			if(error) {
-//				console.error("Error when sending loggedin message: ", error);
-//				callback(error);
-//			} else {
-//				callback(null);
-//			}
-//			
-//		});
+
+	//		var msg = vitaljs.graphObject({type: 'http://vital.ai/ontology/vital-aimp#UserLoggedIn'});
+	//		
+	//		this.sendMessage(this.haleySessionSingleton, msg, [], function(error){
+	//			
+	//			if(error) {
+	//				console.error("Error when sending loggedin message: ", error);
+	//				callback(error);
+	//			} else {
+	//				callback(null);
+	//			}
+	//			
+	//		})
+			
 	}
 	
 	// init a new instance
 	// default is to use only locally available domains
 	
-	
 	// use for mock case
 	public HaleyAPI() {
-
-		
-		
+	
 	}		
-	
-	
+		
 	public HaleyAPI(VitalServiceAsyncWebsocketClient websocketClient) {
 		
 		this.vitalService = websocketClient
@@ -245,29 +256,30 @@ class HaleyAPI {
 	
 	
 	// open session to haley service
+	
 	public HaleySession openSession() {
 	
 		throw new Exception("Blocking version not implemented yet")
 		
-//		HaleySession session = new HaleySession()
-//		
-//		sessions.add(session)
-//		
-//		return session
-		
-	
+		//		HaleySession session = new HaleySession()
+		//		
+		//		sessions.add(session)
+		//		
+		//		return session
+
 	}
 	
 	// open session to local haley server, given endpoint
+	
 	public HaleySession openSession(String endpoint) {
 		
 		throw new Exception("Blocking version not implemented yet.")
 		
-//		HaleySession session = new HaleySession()
-//		
-//		sessions.add(session)
-//		
-//		return session
+		//		HaleySession session = new HaleySession()
+		//		
+		//		sessions.add(session)
+		//		
+		//		return session
 		
 	}
 	
@@ -281,7 +293,7 @@ class HaleyAPI {
 	
 		Class<? extends AIMPMessage> type = m.getClass();
 	
-		//requestURI handler
+		// requestURI handler
 		String requestURI = m.requestURI
 	
 		if(requestURI != null) {
@@ -312,7 +324,7 @@ class HaleyAPI {
 		
 		}
 		
-		//primary classes
+		// primary classes
 		for(MessageHandler h : this.handlers) {
 			
 			for(Class<? extends AIMPMessage> pc : h.primaryClasses) {
@@ -367,14 +379,14 @@ class HaleyAPI {
 
 	}
 	
-	//nodejs callback style: String error, HaleySession sessionObject 
+	// nodejs callback style: String error, HaleySession sessionObject 
 	public void openSession(Closure callback) {
 	
-//		HaleySession session = new HaleySession()
-//		
-//		sessions.add(session)
-//		
-//		callback.call(session)
+		//		HaleySession session = new HaleySession()
+		//		
+		//		sessions.add(session)
+		//		
+		//		callback.call(session)
 			
 		if(this.haleySessionSingleton != null) {
 			callback('active session already detected', null);
@@ -386,7 +398,6 @@ class HaleyAPI {
 			log.info("Message received: " + rl)
 			
 			_streamHandler(rl)
-			
 		}
 		
 		log.info('subscribing to stream ', this.streamName);
@@ -424,21 +435,19 @@ class HaleyAPI {
 				this.haleySessionSingleton = new HaleySession(sessionID: vitalService.sessionID)
 				
 				callback(null, this.haleySessionSingleton)
-				
 			}			
-			
 		}
 		
 		/*
 		log.info('subscribing to stream ', this.streamName);
 			
-//			var _this = this;
-//		
-//			this.handlerFunction = function(msgRL){
-//				_this._streamHandler(msgRL);
-//			}
+			//			var _this = this;
+			//		
+			//			this.handlerFunction = function(msgRL){
+			//				_this._streamHandler(msgRL);
+			//			}
 			
-			//first register stream handler
+			// first register stream handler
 			this.vitalService.callFunction(VitalService.JS_REGISTER_STREAM_HANDLER, {streamName: this.streamName, handlerFunction: this.handlerFunction}, function(succsessObj){
 				
 				console.log('registered handler to ' + _this.streamName, succsessObj);
@@ -497,12 +506,12 @@ class HaleyAPI {
 		
 		throw new Exception("Blocking version not implemented yet.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		
-//		sessions.remove(session)
-//		
-//		return status
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		
+		//		sessions.remove(session)
+		//		
+		//		return status
 		
 	}
 	
@@ -510,11 +519,11 @@ class HaleyAPI {
 	
 		throw new Exception("not implemented yet.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		sessions.remove(session)
-//		
-//		callback.call(status)
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		sessions.remove(session)
+		//		
+		//		callback.call(status)
 		
 	}
 	
@@ -523,21 +532,21 @@ class HaleyAPI {
 		
 		throw new Exception("Blocking version not implemented yet.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		int closed = 0
-//		
-//		// do close
-//		sessions.each { session -> 
-//			
-//			closed++
-//			
-//		}
-//
-//		sessions.clear()
-//				
-//		
-//		return status
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		int closed = 0
+		//		
+		//		// do close
+		//		sessions.each { session -> 
+		//			
+		//			closed++
+		//			
+		//		}
+		//
+		//		sessions.clear()
+		//				
+		//		
+		//		return status
 		
 	}
 	
@@ -545,18 +554,18 @@ class HaleyAPI {
 	
 		throw new Exception("not implemented yet.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		int closed = 0
-//		
-//		// do close
-//		sessions.each { session -> 
-//			closed++ 
-//		}
-//		
-//		sessions.clear()
-//		
-//		callback.call(status)
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		int closed = 0
+		//		
+		//		// do close
+		//		sessions.each { session -> 
+		//			closed++ 
+		//		}
+		//		
+		//		sessions.clear()
+		//		
+		//		callback.call(status)
 		
 	
 	}
@@ -564,12 +573,12 @@ class HaleyAPI {
 	public Collection<HaleySession> getSessions() {
 		
 		if(this.haleySessionSingleton != null) {
-			return [this.haleySessionSingleton]
+			return [ this.haleySessionSingleton ]
 		} else {
 			return []
 		}
 		
-//		return sessions.asImmutable()
+		//		return sessions.asImmutable()
 		
 	}
 	
@@ -682,12 +691,10 @@ class HaleyAPI {
 	public HaleyStatus unauthenticateSession(HaleySession session) {
 		
 		throw new Exception("blocking version not implemented yet.")
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		
-//		
-//		return status
 		
+		//		HaleyStatus status = new HaleyStatus()
+		
+		//		return status
 		
 	}
 	
@@ -695,12 +702,11 @@ class HaleyAPI {
 	
 		throw new Exception("not implemented yet.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		
-//		callback.call(status)
+		//		HaleyStatus status = new HaleyStatus()
+
+		//		callback.call(status)
 		
-}
+	}
 	
 	public void sendMessageWithRequestCallback(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, Closure requestCallback, Closure sendOpCallback) {
 		
@@ -716,7 +722,7 @@ class HaleyAPI {
 	}
 	
 	
-	//haley status callback
+	// haley status callback
 	public void sendMessage(HaleySession haleySession, AIMPMessage aimpMessage, List<GraphObject> payload, Closure callback) {
 		sendMessageImpl(haleySession, aimpMessage, payload, 0, callback)
 	}
@@ -941,9 +947,9 @@ class HaleyAPI {
 		
 		throw new Exception("Blocking version not implemented.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		return status
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		return status
 		
 		
 	}
@@ -957,10 +963,10 @@ class HaleyAPI {
 	public HaleyStatus sendMessage(HaleySession session, AIMPMessage message, List<GraphObject> payload) {
 	
 		throw new Exception("Blocking version not implemented.")
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		
-//		return status
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		
+		//		return status
 	
 	
 	}
@@ -970,12 +976,12 @@ class HaleyAPI {
 	
 		if(messageTypes == null || messageTypes.size() == 0) throw new Exception("Null or empty messageTypes list")
 		
-//
-//	
-//	var e = this._checkSession(haleySession);
-//	if(e) {
-//		throw e
-//	}
+		//
+		//	
+		//	var e = this._checkSession(haleySession);
+		//	if(e) {
+		//		throw e
+		//	}
 	
 		for( MessageHandler h : this.handlers) {
 		
@@ -1036,10 +1042,10 @@ class HaleyAPI {
 	
 	public HaleyStatus registerRequestCallback(AIMPMessage aimpMessage, Closure callback) {
 		
-//		var e = this._checkSession(haleySession);
-//		if(e) {
-//			throw e
-//		}
+		//		var e = this._checkSession(haleySession);
+		//		if(e) {
+		//			throw e
+		//		}
 		
 		if(aimpMessage == null) return HaleyStatus.error("null aimpMessage")
 		if(aimpMessage.URI == null) return HaleyStatus.error("null aimpMessage.URI")
@@ -1057,10 +1063,10 @@ class HaleyAPI {
 	
 	public HaleyStatus deregisterCallback(Closure callback) {
 		
-//		var e = this._checkSession(haleySession);
-//		if(e) {
-//			throw e
-//		}
+		//		var e = this._checkSession(haleySession);
+		//		if(e) {
+		//			throw e
+		//		}
 		
 		if(this.defaultHandler != null && this.defaultHandler == callback) {
 			this.defaultHandler = null;
@@ -1094,10 +1100,10 @@ class HaleyAPI {
 	public HaleyStatus uploadBinary(HaleySession session, Channel channel) {
 		
 		throw new Exception("not implemented yet.")
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		
-//		return status
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		
+		//		return status
 		
 	}
 	
@@ -1109,10 +1115,10 @@ class HaleyAPI {
 		
 	public void uploadFile(HaleySession session, QuestionMessage questionMessage, FileQuestion fileQuestion, File file, Closure callback) {
 	
-//		if(!scope == 'Public' || scope == 'Private') {
-//			callback(HaleyStatus.error("Invalid scope: " + scope + " , expected Public/Private"))
-//			return
-//		}
+		//		if(!scope == 'Public' || scope == 'Private') {
+		//			callback(HaleyStatus.error("Invalid scope: " + scope + " , expected Public/Private"))
+		//			return
+		//		}
 		
 		String error = this._checkSession(session);
 		if(error) {
@@ -1207,9 +1213,9 @@ class HaleyAPI {
 		
 		throw new Exception("not implemented yet.")
 		
-//		HaleyStatus status = new HaleyStatus()
-//		
-//		return status
+		//		HaleyStatus status = new HaleyStatus()
+		//		
+		//		return status
 	}
 	
 	/*
@@ -1221,24 +1227,24 @@ class HaleyAPI {
 		
 		throw new Exception("not implemented yet")
 		
-//		GParsPool.withExistingPool(mainPool) {  
-//		
-//		
-//			{ ->
-//			
-//				HaleyStatus status = new HaleyStatus()
-//			
-//				for(n in 1..5) {
-//			
-//					sleep(1000)
-//			
-//					callback.downloadStatus(status)
-//			
-//				}
-//			
-//			}.async().call()
-//			
-//		}
+		//		GParsPool.withExistingPool(mainPool) {  
+		//		
+		//		
+		//			{ ->
+		//			
+		//				HaleyStatus status = new HaleyStatus()
+		//			
+		//				for(n in 1..5) {
+		//			
+		//					sleep(1000)
+		//			
+		//					callback.downloadStatus(status)
+		//			
+		//				}
+		//			
+		//			}.async().call()
+		//			
+		//		}
 	}
 	
 	
@@ -1246,13 +1252,13 @@ class HaleyAPI {
 
 		throw new Exception("Blocking version not implemented.")
 		
-//		List<AIMPChannel> channels = []
-//		
-//		return channels
+		//		List<AIMPChannel> channels = []
+		//		
+		//		return channels
 		
 	}
 
-	//nodejs <error, list> type	 
+	// nodejs <error, list> type	 
 	public void listChannels(HaleySession session, Closure callback) {
 		
 		String error = this._checkSession(session)
@@ -1323,9 +1329,9 @@ class HaleyAPI {
 		}
 		
 		def options = [
-//			protocolVersion:"HTTP_2",
+			//			protocolVersion:"HTTP_2",
 			ssl: secure,
-//			useAlpn:true,
+			//			useAlpn:true,
 			trustAll:true
 		  ]
 		

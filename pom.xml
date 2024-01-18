@@ -3,31 +3,27 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <modelVersion>4.0.0</modelVersion>
+<modelVersion>4.0.0</modelVersion>
 
-  <groupId>ai.haley</groupId>
-  <artifactId>haley-client-groovy35</artifactId>
-  <version>0.0.1</version>
+<groupId>ai.haley</groupId>
+<artifactId>haley-client-groovy35</artifactId>
+<version>0.0.1</version>
 
-  <properties>
-    <!-- the main class -->
-    <exec.mainClass>ai.haley.api.sample.HaleyAPISample</exec.mainClass>
+<properties>
+	<exec.mainClass>ai.haley.api.sample.HaleyAPISample</exec.mainClass>
     <vital.version>0.2.304</vital.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+</properties>
 
-
- <repositories>
-  
-  
+<repositories>
+    
 <repository>
 <id>repo1.maven.org</id>
 <name>https://repo1.maven.org/maven2/</name>
 <url>https://repo1.maven.org/maven2/</url>
 </repository>
   
-  
- <repository>
+<repository>
     <id>vital-public-mvn-repo-releases</id>
     <name>Vital AI Public Maven Repo Releases</name>
     <url>https://github.com/vital-ai/vital-public-mvn-repo/raw/releases/</url>
@@ -39,52 +35,42 @@
     <url>https://github.com/vital-ai/vital-public-mvn-repo/raw/snapshots/</url>
 </repository>
 
-  </repositories>
+</repositories>
 
-  <dependencies>
+<dependencies>
   
-  <dependency>
-  <groupId>vital-ai</groupId>
+<dependency>
+	<groupId>vital-ai</groupId>
 	<artifactId>vitalsigns</artifactId>
 	<version>0.2.304</version>
-	
-	
-	
+
 	<exclusions>
-				<exclusion>
-					<groupId>org.codehaus.groovy</groupId>
-					<artifactId>groovy</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.codehaus.groovy</groupId>
-					<artifactId>groovy-json</artifactId>
-				</exclusion>
-				
-				
-				<exclusion>
-
-				<groupId>org.codehaus.groovy</groupId>
-				<artifactId>groovy-all</artifactId>
-	
-				</exclusion>
-	
-				<exclusion>
-
-				<groupId>org.codehaus.groovy</groupId>
-				<artifactId>groovy-xml</artifactId>
-	
-				</exclusion>
-				
-				<exclusion>
-				<groupId>com.ibm.icu</groupId>
-    			<artifactId>icu4j</artifactId>
-	
-				</exclusion>
+		<exclusion>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy</artifactId>
+		</exclusion>
+		<exclusion>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-json</artifactId>
+		</exclusion>
 						
-			</exclusions>
+		<exclusion>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+		</exclusion>
 	
+		<exclusion>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-xml</artifactId>
+		</exclusion>
+				
+		<exclusion>
+			<groupId>com.ibm.icu</groupId>
+    		<artifactId>icu4j</artifactId>
+		</exclusion>
+						
+	</exclusions>
 </dependency>
-
 
 <!-- https://mvnrepository.com/artifact/com.ibm.icu/icu4j -->
 <dependency>
@@ -93,24 +79,17 @@
     <version>68.2</version>
 </dependency>
 
-  
-  
-  
-  
-	<dependency>
-		<groupId>vital-ai</groupId>
-		<artifactId>vitalservice-websocket-vertx35</artifactId>
-		<version>${vital.version}</version>
-	</dependency>
+<dependency>
+	<groupId>vital-ai</groupId>
+	<artifactId>vitalservice-websocket-vertx35</artifactId>
+	<version>${vital.version}</version>
+</dependency>
 
- 	<dependency>
-		<groupId>vitalai-com</groupId>
-		<artifactId>vital-aimp</artifactId>
-		<version>0.1.0</version>
-	</dependency>
-
-
-
+<dependency>
+	<groupId>vitalai-com</groupId>
+	<artifactId>vital-aimp</artifactId>
+	<version>0.1.0</version>
+</dependency>
 
 <!-- https://mvnrepository.com/artifact/org.apache.tika/tika-core -->
 <!--
@@ -128,10 +107,7 @@
     <version>2.9.1</version>
 </dependency>
 
-
-
-  
-  <!--  
+<!--  
    <dependency>
     <groupId>vital-ai</groupId>
     <artifactId>vital-lucene</artifactId>
@@ -155,15 +131,12 @@
                 </exclusion>
         </exclusions>
   </dependency>
-  
-  
+    
   <dependency>
       <groupId>vital-ai</groupId>
       <artifactId>vital-domain</artifactId>
-      <version>${vital.version}</version>
-      
+      <version>${vital.version}</version>    
     </dependency>
-
 
  <dependency>
  <groupId>vital-ai</groupId>
@@ -171,41 +144,34 @@
  <version>0.1.0</version>
  <scope>provided</scope>
  </dependency>
+    
+-->
   
-  
-  -->
-  
-  <dependency>
+<dependency>
     <groupId>com.typesafe</groupId>
     <artifactId>config</artifactId>
     <version>1.3.0</version>
 </dependency>
+      
+<dependency>
+ 	<groupId>org.codehaus.groovy</groupId>
+    <artifactId>groovy-all</artifactId>
+    <version>2.5.0-SNAPSHOT</version>
+</dependency>
   
-  
-    
-  <dependency>
-        <groupId>org.codehaus.groovy</groupId>
-        <artifactId>groovy-all</artifactId>
-        <version>2.5.0-SNAPSHOT</version>
-  </dependency>
-  
-  
-  <dependency>
+<dependency>
     <groupId>org.codehaus.gpars</groupId>
     <artifactId>gpars</artifactId>
     <version>1.2.1</version>
 </dependency>
-  
-  
-  
-  <dependency>
-        <groupId>com.thoughtworks.xstream</groupId>
-        <artifactId>xstream</artifactId>
-        <version>1.4.19</version>
-  </dependency>
-  
-  
-  </dependencies>
+    
+<dependency>
+   	<groupId>com.thoughtworks.xstream</groupId>
+    <artifactId>xstream</artifactId>
+    <version>1.4.19</version>
+</dependency>
+   
+</dependencies>
 
   <build>
 
@@ -269,12 +235,11 @@
       </plugins>
     </pluginManagement>
 
-    <!--
-    You only need the part below if you want to build your application into a fat executable jar.
-    This is a jar that contains all the dependencies required to run it, so you can just run it with
-    java -jar
-    -->
+   
     <plugins>
+    
+    <!--
+    
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -304,14 +269,16 @@
           </execution>
         </executions>
       </plugin>
+	-->
+	
 
+<!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.4.0</version>
         <executions>
           <execution>
-            <!-- run the application using the fat jar -->
             <id>run-app</id>
             <goals>
               <goal>exec</goal>
@@ -326,6 +293,9 @@
           </execution>
         </executions>
       </plugin>
+	-->
+	
+
 
 <plugin>
     <groupId>org.codehaus.mojo</groupId>
@@ -382,6 +352,47 @@
         </dependencies>
       </plugin>
    
+
+<plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-property</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireProperty>
+                  <property>vital.private.repo</property>
+                  <message>You must set vital.private.repo property which is the path to cloned releases branch of
+      https://github.com/vital-ai/vital-mvn-repo</message>
+                </requireProperty>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+		
+		<plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.8.1</version>
+        <configuration>
+      <altDeploymentRepository>internal.repo::default::file://${vital.private.repo}</altDeploymentRepository>
+        </configuration>
+      </plugin>
+
+
+
+
+
+
+
+
+
 
     </plugins>
   </build>
