@@ -7,7 +7,7 @@ import ai.haley.api.session.HaleySession
 import ai.haley.api.session.HaleyStatus
 import ai.vital.domain.FileNode
 import ai.vital.domain.Login
-import ai.vital.domain.UserSession;
+import ai.vital.domain.UserSession
 import ai.vital.service.vertx3.binary.ResponseMessage
 import ai.vital.service.vertx3.websocket.VitalServiceAsyncWebsocketClient
 import ai.vital.vitalservice.VitalStatus
@@ -34,16 +34,15 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import jsr166y.ForkJoinPool 
-import groovyx.gpars.GParsPool
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpClient
 import io.vertx.core.http.HttpClientRequest
 import io.vertx.core.http.HttpClientResponse
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.locks.Condition
-import java.util.concurrent.locks.ReentrantLock
-// import java.util.concurrent.Executors
+
 
 /*
  * Haley API
@@ -95,7 +94,6 @@ class HaleyAPI {
 	
 	// private List<HaleySession> sessions = []
 	
-	// private final def mainPool = Executors.newFixedThreadPool(10)
 	
 	private HaleySession haleySessionSingleton
 
@@ -111,8 +109,9 @@ class HaleyAPI {
 	Closure defaultHandler = null;
 	
 	Closure handlerFunction = null;
+		
+	Closure closeFrameHandler = null
 	
-	// private ForkJoinPool mainPool
 	
 	private syncdomains = false
 	
@@ -231,28 +230,12 @@ class HaleyAPI {
 
 		}
 		
-		// mainPool = new ForkJoinPool()
 		
 		this.syncdomains = false
 		
 	}
 	
-	/*
-	 * utility classes to test parallelization of calls
-	 * 
-	 */
 	
-	// public int getActiveThreadCount() {
-		
-	// 	return mainPool.getActiveThreadCount()
-		
-	// }
-	
-	// public boolean isQuiescent() {
-		
-	// 	return mainPool.isQuiescent()
-		
-	// }
 	
 	
 	// open session to haley service
@@ -261,11 +244,7 @@ class HaleyAPI {
 	
 		throw new Exception("Blocking version not implemented yet")
 		
-		//		HaleySession session = new HaleySession()
-		//		
-		//		sessions.add(session)
-		//		
-		//		return session
+		
 
 	}
 	
@@ -275,11 +254,7 @@ class HaleyAPI {
 		
 		throw new Exception("Blocking version not implemented yet.")
 		
-		//		HaleySession session = new HaleySession()
-		//		
-		//		sessions.add(session)
-		//		
-		//		return session
+		
 		
 	}
 	
@@ -379,18 +354,19 @@ class HaleyAPI {
 
 	}
 	
-	// nodejs callback style: String error, HaleySession sessionObject 
-	public void openSession(Closure callback) {
+	volatile boolean canceled = false
 	
-		//		HaleySession session = new HaleySession()
-		//		
-		//		sessions.add(session)
-		//		
-		//		callback.call(session)
+	public void openSession(Closure callback) {
+			
+		ExecutorService executorService = Executors.newSingleThreadExecutor()
+		
+		Future<?> callFunctionFuture
+	
+		CountDownLatch latch = new CountDownLatch(1)
 			
 		if(this.haleySessionSingleton != null) {
-			callback('active session already detected', null);
-			return;
+			callback('active session already detected', null)
+			return
 		}
 
 		this.handlerFunction = { ResultList rl ->
@@ -400,107 +376,134 @@ class HaleyAPI {
 			_streamHandler(rl)
 		}
 		
-		log.info('subscribing to stream ', this.streamName);
-		
-		vitalService.callFunction(VitalServiceAsyncWebsocketClient.GROOVY_REGISTER_STREAM_HANDLER, [streamName: this.streamName, handlerFunction: this.handlerFunction] ) { ResponseMessage regRes ->
+		Closure closeFrameHandler = {  ->
 			
-			if(regRes.exceptionType) {
-				callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
-				return
-			}
+			log.info("HaleyAPI Close Frame Received")
 			
-			ResultList regRL = regRes.response
-			if(regRL.status.status != VitalStatus.Status.ok) {
-				callback("ERROR: " + regRL.status.message, null)
-				return
-			}
+			canceled = true
 			
-			log.info('registered handler to ' + this.streamName);
+			if (callFunctionFuture) {
 				
-			vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [streamName: this.streamName]) { ResponseMessage subRes ->
-				if(subRes.exceptionType) {
-					callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
-					return
-				}
-				
-				ResultList subRL = regRes.response
-				if(subRL.status.status != VitalStatus.Status.ok) {
-					callback("ERROR: " + subRL.status.message, null)
-					return
-				}
-				
-				log.info('subscribed to ' + this.streamName);
-				
-				//in groovy session cookie is unavailable - session must not be authenticated
-				this.haleySessionSingleton = new HaleySession(sessionID: vitalService.sessionID)
-				
-				callback(null, this.haleySessionSingleton)
-			}			
+				// this can trigger an exception
+				// to get past the await
+				// but counting it down should also clear it
+				callFunctionFuture.cancel(true)
+			}	
+			
+			latch.countDown()
 		}
 		
-		/*
+		this.closeFrameHandler = closeFrameHandler
+		
+		vitalService.closeFrameHandler = this.closeFrameHandler
+		
 		log.info('subscribing to stream ', this.streamName);
+		
+		// get out of vertx thread
+		
+		callFunctionFuture = executorService.submit({
 			
-			//			var _this = this;
-			//		
-			//			this.handlerFunction = function(msgRL){
-			//				_this._streamHandler(msgRL);
-			//			}
+			try {	
+		
+				// launch separate thread to await	
+				ExecutorService innerExecutorService = Executors.newSingleThreadExecutor()
+				
+				innerExecutorService.submit({
+				
+					vitalService.callFunction(VitalServiceAsyncWebsocketClient.GROOVY_REGISTER_STREAM_HANDLER, [streamName: this.streamName, handlerFunction: this.handlerFunction] ) { ResponseMessage regRes ->
 			
-			// first register stream handler
-			this.vitalService.callFunction(VitalService.JS_REGISTER_STREAM_HANDLER, {streamName: this.streamName, handlerFunction: this.handlerFunction}, function(succsessObj){
-				
-				console.log('registered handler to ' + _this.streamName, succsessObj);
-				
-				_this.vitalService.callFunction(VitalService.VERTX_STREAM_SUBSCRIBE, {streamName: _this.streamName}, function(succsessObj){
-					
-					console.log("subscribed to stream " + _this.streamName, succsessObj);
-					
-					//session opened
-					_this.haleySessionSingleton = new HaleySession(_this);
-					
-					if(_this.haleySessionSingleton.isAuthenticated()) {
+						if(regRes.exceptionType) {
+							
+							callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
+							
+							latch.countDown()
+							
+							return
+						}
+			
+						ResultList regRL = regRes.response
+			
+						if(regRL.status.status != VitalStatus.Status.ok) {
+							
+							callback("ERROR: " + regRL.status.message, null)
+							
+							latch.countDown()
+							
+							return
+						}
+			
+						log.info('registered handler to ' + this.streamName)
+			
+						// Note: don't call callback if already canceled
 						
-						_this._sendLoggedInMsg(function(error){
+						Closure subscribeHandler = { ResponseMessage subRes ->
+				
+							if(subRes.exceptionType) {
 							
-							console.log("LoggedIn msg sent successfully");
+								if(canceled == false) {
+										
+									callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
+								}
 							
-							if(error) {
-								callback(error);
-							} else {
-								callback(null, _this.haleySessionSingleton);
+								latch.countDown()
+								
+								return
 							}
+				
+							ResultList subRL = regRes.response
+				
+							if(subRL.status.status != VitalStatus.Status.ok) {
 							
-						});
+								if(canceled == false) {
+								
+									callback("ERROR: " + subRL.status.message, null)
+								}
+							
+								latch.countDown()
+								
+								return
+							}
+				
+							if(canceled == false) {
 						
-					} else {
+								log.info('subscribed to ' + this.streamName)
+								
+								this.haleySessionSingleton = new HaleySession(sessionID: vitalService.sessionID)
+				
+								callback(null, this.haleySessionSingleton)
+							}
 						
-						callback(null, _this.haleySessionSingleton);
-						
+							latch.countDown()
+						}
+			
+						vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [ streamName: this.streamName ], subscribeHandler )			
 					}
+				})
 					
-					
-					
-				}, function(errorObj) {
-					
-					console.error("Error when subscribing to stream", errorObj);
-					
-					callback(errorObj);
-					
-				});
+			} catch (Exception e) {
+                log.error("Error in callFunction Register/Subscribe", e)
+          }
+		  
+		  try {
+			  
+			  latch.await()
+			  
+		  } catch (InterruptedException e) {
+			  
+			  log.info("Register/Subscribe method was interrupted")
+		  }
+		  
+		  // pass canceled error back to callback
+		  
+		  if(canceled == true) {
+			  
+			  log.info("Register/Subscribe method was canceled")
+			  
+			  callback("Register/Subscribe method was canceled", null)
+		  }
+		})
 		
-				
-			}, function(error){
-		
-				console.error('couldn\'t register messages handler', error);
-				
-				callback(error);
-				
-			});
-			*/
-	
 	}
-	
 	
 	public HaleyStatus closeSession(HaleySession session) {
 		
@@ -1213,38 +1216,16 @@ class HaleyAPI {
 		
 		throw new Exception("not implemented yet.")
 		
-		//		HaleyStatus status = new HaleyStatus()
-		//		
-		//		return status
+		
 	}
 	
-	/*
-	 * Includes a test of using GPars for parallelization of calls.
-	 * This should be used for all HaleyCallback cases
-	 */
+	
 	
 	public void downloadBinary(HaleySession session, String identifier, Channel channel, Closure callback) {
 		
 		throw new Exception("not implemented yet")
 		
-		//		GParsPool.withExistingPool(mainPool) {  
-		//		
-		//		
-		//			{ ->
-		//			
-		//				HaleyStatus status = new HaleyStatus()
-		//			
-		//				for(n in 1..5) {
-		//			
-		//					sleep(1000)
-		//			
-		//					callback.downloadStatus(status)
-		//			
-		//				}
-		//			
-		//			}.async().call()
-		//			
-		//		}
+		
 	}
 	
 	
@@ -1252,13 +1233,9 @@ class HaleyAPI {
 
 		throw new Exception("Blocking version not implemented.")
 		
-		//		List<AIMPChannel> channels = []
-		//		
-		//		return channels
 		
 	}
 
-	// nodejs <error, list> type	 
 	public void listChannels(HaleySession session, Closure callback) {
 		
 		String error = this._checkSession(session)

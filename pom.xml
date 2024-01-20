@@ -23,17 +23,11 @@
 <url>https://repo1.maven.org/maven2/</url>
 </repository>
   
-<repository>
-    <id>vital-public-mvn-repo-releases</id>
-    <name>Vital AI Public Maven Repo Releases</name>
-    <url>https://github.com/vital-ai/vital-public-mvn-repo/raw/releases/</url>
-</repository>
-
-<repository>
-    <id>vital-public-mvn-repo-snapshots</id>
-    <name>Vital AI Public Maven Repo Snapshots</name>
-    <url>https://github.com/vital-ai/vital-public-mvn-repo/raw/snapshots/</url>
-</repository>
+ 	<repository>
+    	<id>vital-mvn-repo-releases</id>
+    	<name>Vital AI Private Maven Repo Releases</name>
+    	<url>https://raw.githubusercontent.com/vital-ai/vital-mvn-repo/releases/</url>
+    </repository>
 
 </repositories>
 
