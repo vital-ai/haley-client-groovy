@@ -358,17 +358,13 @@ class HaleyAPI {
 	
 	public void openSession(Closure callback) {
 			
-		ExecutorService executorService = Executors.newSingleThreadExecutor()
-		
-		Future<?> callFunctionFuture
-	
-		CountDownLatch latch = new CountDownLatch(1)
-			
 		if(this.haleySessionSingleton != null) {
 			callback('active session already detected', null)
 			return
 		}
 
+		CountDownLatch latch = new CountDownLatch(1)
+		
 		this.handlerFunction = { ResultList rl ->
 			
 			log.info("Message received: " + rl)
@@ -382,14 +378,12 @@ class HaleyAPI {
 			
 			canceled = true
 			
-			if (callFunctionFuture != null) {
 				
-				// this can trigger an exception
-				// to get past the await
-				// but counting it down should also clear it
-				callFunctionFuture.cancel(true)
-			}	
-			
+			// this can trigger an exception
+			// to get past the await
+			// but counting it down should also clear it
+			// callFunctionFuture.cancel(true)
+				
 			latch.countDown()
 		}
 		
@@ -399,130 +393,119 @@ class HaleyAPI {
 		
 		log.info('subscribing to stream ', this.streamName);
 		
+		String errorMessage = null
+		
+		HaleySession haleySession = null
+		
 		// get out of vertx thread
-		
-		callFunctionFuture = executorService.submit({
-			
-			try {	
-		
-				// launch separate thread to await	
-				ExecutorService innerExecutorService = Executors.newSingleThreadExecutor()
+		ExecutorService innerExecutorService = Executors.newSingleThreadExecutor()
 				
-				innerExecutorService.submit({
+		innerExecutorService.submit({
 				
-					vitalService.callFunction(VitalServiceAsyncWebsocketClient.GROOVY_REGISTER_STREAM_HANDLER, [streamName: this.streamName, handlerFunction: this.handlerFunction] ) { ResponseMessage regRes ->
-			
-						if(regRes.exceptionType) {
-							
-							latch.countDown()
-							
-							if(canceled == false) {
-							
-								callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
-							
-							}
-							return
-						}
-			
-						ResultList regRL = regRes.response
-			
-						if(regRL.status.status != VitalStatus.Status.ok) {
-							
-							latch.countDown()
-							
-							if(canceled == false) {
-								
-								callback("ERROR: " + regRL.status.message, null)
-							
-							}
-							
-							return
-						}
-			
-						log.info('registered handler to ' + this.streamName)
-			
-						// Note: don't call callback if already canceled
-						
-						Closure subscribeHandler = { ResponseMessage subRes ->
-				
-							if(subRes.exceptionType) {
-							
-								latch.countDown()
-								
-								log.error("ERROR: " + subRes.exceptionType + ' - ' + subRes.exceptionMessage)
-								
-								if(canceled == false) {
-										
-									callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
-								}
-							
-								
-								return
-							}
-				
-							ResultList subRL = regRes.response
-				
-							if(subRL.status.status != VitalStatus.Status.ok) {
-							
-								latch.countDown()
-								
-								log.error( "ERROR: " + subRL.status.message )
-								
-								
-								if(canceled == false) {
-								
-									callback("ERROR: " + subRL.status.message, null)
-								}
-							
-								
-								
-								return
-							}
-				
-							latch.countDown()
-							
-							if(canceled == false) {
-						
-								log.info('subscribed to ' + this.streamName)
-								
-								this.haleySessionSingleton = new HaleySession(sessionID: vitalService.sessionID)
-				
-								callback(null, this.haleySessionSingleton)
-							}
-						
-						}
-			
-						vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [ streamName: this.streamName ], subscribeHandler )			
-					}
-				})
+			try {
 					
-			} catch (Exception e) {
+				vitalService.callFunction(VitalServiceAsyncWebsocketClient.GROOVY_REGISTER_STREAM_HANDLER, [streamName: this.streamName, handlerFunction: this.handlerFunction] ) { ResponseMessage regRes ->
+			
+					if(regRes.exceptionType) {
+							
+						errorMessage = regRes.exceptionType + ' - ' + regRes.exceptionMessage
+							
+						log.error(errorMessage)
+							
+						latch.countDown()
+							
+						return 
+					}
+			
+					ResultList regRL = regRes.response
+			
+					if(regRL.status.status != VitalStatus.Status.ok) {
+							
+						errorMessage = "ERROR: " + regRL.status.message
+							
+						log.error(errorMessage)
+							
+						latch.countDown()
+							
+						return 
+					}
+			
+					log.info('registered handler to ' + this.streamName)
 				
-                log.error("Error in callFunction Register/Subscribe", e)
-          }
-		  
-		  try {
-			  
-			  latch.await()
-			  
-			  log.info("After await.  Canceled: " + canceled)
-			  
-			  
-		  } catch (InterruptedException e) {
-			  
-			  log.info("Register/Subscribe method was interrupted")
-		  }
-		  
-		  // pass canceled error back to callback
-		  
-		  if(canceled == true) {
-			  
-			  log.info("Register/Subscribe method was canceled")
-			  
-			  callback("Register/Subscribe method was canceled", null)
-		  }
+					Closure subscribeHandler = { ResponseMessage subRes ->
+				
+						if(subRes.exceptionType) {
+							
+							errorMessage = "ERROR: " + subRes.exceptionType + ' - ' + subRes.exceptionMessage
+								
+							log.error(errorMessage)
+								
+							latch.countDown()
+								
+							return 
+									
+						}
+				
+						ResultList subRL = regRes.response
+				
+						if(subRL.status.status != VitalStatus.Status.ok) {
+									
+							errorMessage = "ERROR: " + subRL.status.message
+								
+							log.error(errorMessage)
+								
+							latch.countDown()
+								
+							return
+						}
+				
+						log.info('subscribed to ' + this.streamName)
+							
+						this.haleySessionSingleton = new HaleySession(sessionID: vitalService.sessionID)
+			
+						haleySession = this.haleySessionSingleton
+							
+						latch.countDown()
+					
+					}
+			
+					vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [ streamName: this.streamName ], subscribeHandler )			
+				}
+							
+			} catch (Exception e) {
+					
+				errorMessage = "Error in callFunction Register/Subscribe" + e.localizedMessage
+					
+				log.error(errorMessage)
+						
+				latch.countDown()
+						
+			}
 		})
+					
+		try {
+			
+			latch.await()
+			
+			log.info("After await.  Canceled Status: " + canceled)
+			
+		} catch (InterruptedException e) {
+			
+			log.info("Register/Subscribe method was interrupted")
+		}
 		
+		// pass canceled error back to callback
+		
+		if(canceled == true) {
+			
+			log.info("Register/Subscribe method was canceled")
+			
+			callback("Register/Subscribe method was canceled", null)
+		}
+		else {
+			
+			callback(errorMessage, haleySession)
+		}
 	}
 	
 	public HaleyStatus closeSession(HaleySession session) {
