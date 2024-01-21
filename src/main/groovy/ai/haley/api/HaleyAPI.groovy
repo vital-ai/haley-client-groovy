@@ -382,7 +382,7 @@ class HaleyAPI {
 			
 			canceled = true
 			
-			if (callFunctionFuture) {
+			if (callFunctionFuture != null) {
 				
 				// this can trigger an exception
 				// to get past the await
@@ -414,9 +414,9 @@ class HaleyAPI {
 			
 						if(regRes.exceptionType) {
 							
-							callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
-							
 							latch.countDown()
+							
+							callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
 							
 							return
 						}
@@ -425,9 +425,9 @@ class HaleyAPI {
 			
 						if(regRL.status.status != VitalStatus.Status.ok) {
 							
-							callback("ERROR: " + regRL.status.message, null)
-							
 							latch.countDown()
+							
+							callback("ERROR: " + regRL.status.message, null)
 							
 							return
 						}
@@ -440,16 +440,15 @@ class HaleyAPI {
 				
 							if(subRes.exceptionType) {
 							
-								log.error("ERROR: " + subRes.exceptionType + ' - ' + subRes.exceptionMessage)
-								
 								latch.countDown()
+								
+								log.error("ERROR: " + subRes.exceptionType + ' - ' + subRes.exceptionMessage)
 								
 								if(canceled == false) {
 										
 									callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
 								}
 							
-								
 								
 								return
 							}
@@ -458,9 +457,10 @@ class HaleyAPI {
 				
 							if(subRL.status.status != VitalStatus.Status.ok) {
 							
+								latch.countDown()
+								
 								log.error( "ERROR: " + subRL.status.message )
 								
-								latch.countDown()
 								
 								if(canceled == false) {
 								
