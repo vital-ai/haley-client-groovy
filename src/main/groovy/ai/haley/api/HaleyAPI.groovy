@@ -416,8 +416,11 @@ class HaleyAPI {
 							
 							latch.countDown()
 							
-							callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
+							if(canceled == false) {
 							
+								callback(regRes.exceptionType + ' - ' + regRes.exceptionMessage, null)
+							
+							}
 							return
 						}
 			
@@ -427,7 +430,11 @@ class HaleyAPI {
 							
 							latch.countDown()
 							
-							callback("ERROR: " + regRL.status.message, null)
+							if(canceled == false) {
+								
+								callback("ERROR: " + regRL.status.message, null)
+							
+							}
 							
 							return
 						}
