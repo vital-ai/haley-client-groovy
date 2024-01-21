@@ -440,6 +440,8 @@ class HaleyAPI {
 				
 							if(subRes.exceptionType) {
 							
+								log.error("ERROR: " + subRes.exceptionType + ' - ' + subRes.exceptionMessage)
+								
 								if(canceled == false) {
 										
 									callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
@@ -454,6 +456,8 @@ class HaleyAPI {
 				
 							if(subRL.status.status != VitalStatus.Status.ok) {
 							
+								log.error( "ERROR: " + subRL.status.message )
+								
 								if(canceled == false) {
 								
 									callback("ERROR: " + subRL.status.message, null)
@@ -481,12 +485,16 @@ class HaleyAPI {
 				})
 					
 			} catch (Exception e) {
+				
                 log.error("Error in callFunction Register/Subscribe", e)
           }
 		  
 		  try {
 			  
 			  latch.await()
+			  
+			  log.info("After await.  Canceled: " + canceled)
+			  
 			  
 		  } catch (InterruptedException e) {
 			  
