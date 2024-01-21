@@ -442,12 +442,14 @@ class HaleyAPI {
 							
 								log.error("ERROR: " + subRes.exceptionType + ' - ' + subRes.exceptionMessage)
 								
+								latch.countDown()
+								
 								if(canceled == false) {
 										
 									callback(subRes.exceptionType + ' - ' + subRes.exceptionMessage, null)
 								}
 							
-								latch.countDown()
+								
 								
 								return
 							}
@@ -458,16 +460,20 @@ class HaleyAPI {
 							
 								log.error( "ERROR: " + subRL.status.message )
 								
+								latch.countDown()
+								
 								if(canceled == false) {
 								
 									callback("ERROR: " + subRL.status.message, null)
 								}
 							
-								latch.countDown()
+								
 								
 								return
 							}
 				
+							latch.countDown()
+							
 							if(canceled == false) {
 						
 								log.info('subscribed to ' + this.streamName)
@@ -477,7 +483,6 @@ class HaleyAPI {
 								callback(null, this.haleySessionSingleton)
 							}
 						
-							latch.countDown()
 						}
 			
 						vitalService.callFunction(VitalServiceAsyncWebsocketClient.VERTX_STREAM_SUBSCRIBE, [ streamName: this.streamName ], subscribeHandler )			
