@@ -481,31 +481,32 @@ class HaleyAPI {
 				latch.countDown()
 						
 			}
+			
+			try {
+				
+				latch.await()
+				
+				log.info("After await.  Canceled Status: " + canceled)
+				
+			} catch (InterruptedException e) {
+				
+				log.info("Register/Subscribe method was interrupted")
+			}
+			
+			// pass canceled error back to callback
+			
+			if(canceled == true) {
+				
+				log.info("Register/Subscribe method was canceled")
+				
+				callback("Register/Subscribe method was canceled", null)
+			}
+			else {
+				
+				callback(errorMessage, haleySession)
+			}
+			
 		})
-					
-		try {
-			
-			latch.await()
-			
-			log.info("After await.  Canceled Status: " + canceled)
-			
-		} catch (InterruptedException e) {
-			
-			log.info("Register/Subscribe method was interrupted")
-		}
-		
-		// pass canceled error back to callback
-		
-		if(canceled == true) {
-			
-			log.info("Register/Subscribe method was canceled")
-			
-			callback("Register/Subscribe method was canceled", null)
-		}
-		else {
-			
-			callback(errorMessage, haleySession)
-		}
 	}
 	
 	public HaleyStatus closeSession(HaleySession session) {
