@@ -821,7 +821,7 @@ class HaleyAPI {
 			
 				String n = authAccount.name
 				
-				aimpMessage.userName = n != null ? n : authAccount.username
+				aimpMessage.username = n != null ? n : authAccount.username
 			}
 		
 		}
