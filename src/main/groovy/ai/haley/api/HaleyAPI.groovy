@@ -781,18 +781,21 @@ class HaleyAPI {
 			}
 			
 			String currentUserID = authAccount.username
+			
 			if(currentUserID != masterUserID) {
 				callback(HaleyStatus.error("Master and current userID are different: " + masterUserID + " vs " + currentUserID))
 				return
 			}
 			
 			String effectiveUserID = aimpMessage.userID
+			
 			if(effectiveUserID == null) {
 				callback(HaleyStatus.error("No userID in the message, it is required when using masterUserID tunneling."))
 				return
 			}
 			
 			String endpointURI = aimpMessage.endpointURI
+			
 			if(!endpointURI) {
 				callback(HaleyStatus.error("masterUserID may only be used with endpointURI."))
 				return
